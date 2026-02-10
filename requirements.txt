@@ -12,6 +12,7 @@ pyarabic>=0.6.15
 # Data
 pandas>=2.0.0
 numpy>=1.24.0
+requests>=2.31.0
 
 # Knowledge Graph
 neo4j>=5.0.0
@@ -29,3 +30,5 @@ jupyter>=1.0.0
 pytest>=7.4.0
 black>=23.0.0
 ruff>=0.1.0
+evaluate>=0.4.0
+accelerate>=0.21.0
