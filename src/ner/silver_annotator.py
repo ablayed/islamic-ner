@@ -64,6 +64,11 @@ class SilverAnnotator:
         self._book_context_keywords = {"صحيح", "سنن", "مسند", "موطا"}
         self._punctuation_chars = set(".,،؛;:!?؟()[]{}\"'")
 
+        self._hadith_ref_number_patterns = [
+            re.compile(r"\u062d\u062f\u064a\u062b\s+\u0631\u0642\u0645\s+[0-9\u0660-\u0669]+"),
+            re.compile(r"\u0631\u0642\u0645\s+[0-9\u0660-\u0669]+"),
+        ]
+
     def annotate_from_sanadset(self, tagged_text: str) -> List[Tuple[str, str]]:
         """
         Takes a Sanadset-format text with <NAR>, <SANAD>, <MATN> tags.
@@ -99,7 +104,7 @@ class SilverAnnotator:
             gazetteer_token_entities,
         )
 
-    def annotate_from_raw(self, raw_text: str) -> List[Tuple[str, str]]:
+    def annotate_from_raw(self, raw_text: str, *, is_normalized: bool = False) -> List[Tuple[str, str]]:
         """
         Takes raw Arabic text (no tags)  used for hadith-json data.
         Returns list of (token, BIO_label) pairs.
@@ -111,7 +116,7 @@ class SilverAnnotator:
         4. Apply HADITH_REF patterns
         5. Assign BIO labels
         """
-        text = self.normalizer.normalize(raw_text)
+        text = raw_text if is_normalized else self.normalizer.normalize(raw_text)
         token_infos = self._tokenize_with_spans(text)
         token_list = [token_info["token"] for token_info in token_infos]
 
@@ -251,8 +256,8 @@ class SilverAnnotator:
                 }
             )
 
-        for pattern in (r"حديث\s+رقم\s+[0-9٠-٩]+", r"رقم\s+[0-9٠-٩]+"):
-            for match in re.finditer(pattern, text):
+        for compiled_pattern in self._hadith_ref_number_patterns:
+            for match in compiled_pattern.finditer(text):
                 entities.append(
                     {
                         "text": match.group(0),
