@@ -14,6 +14,9 @@ This repository is now in a documented Phase 3 state with:
 - gold evaluation completed for all three final models
 - dedicated gold error-analysis notebook completed
 - technical interpretation paragraphs finalized
+- rule-based relation extraction module completed (Task 1 MVP)
+- entity normalization + graph construction/query stack completed (Tasks 2/3 MVP)
+- relation/graph unit tests added and passing
 
 ## Entity Schema
 
@@ -22,6 +25,10 @@ This repository is now in a documented Phase 3 state with:
 - `CONCEPT`: Islamic concepts/terms
 - `PLACE`: geographic names
 - `HADITH_REF`: structural/citation references
+
+## Relation Extraction Strategy (MVP)
+
+For this dataset, rule-based relation extraction is the right first implementation: isnad chains follow rigid, stable syntax (for example, `حدثنا X عن Y عن Z`) where connector patterns encode direction explicitly. With limited labeled relation data, a trained RE classifier would require annotation volume that is currently unavailable, while deterministic patterns already recover core isnad structure at high precision. This repo therefore uses a rule-based RE engine for MVP and keeps classifier-based RE as a future extension once a dedicated relation-annotation set is available.
 
 ## Completed Work (So Far)
 
@@ -54,6 +61,21 @@ for param in camel_model.parameters():
 - Gold evaluation results saved: `models/gold_evaluation_results.json`
 - Error analysis notebook created: `notebooks/07_error_analysis.ipynb`
 - Interpretation write-up saved: `interpretation.txt`
+
+6. **Rule-based relation extraction (Task 1)**
+- Implemented extractor: `src/relations/extract.py` (`RelationExtractor`)
+- Supported relation types: `NARRATED_FROM`, `IN_BOOK`, `MENTIONS_CONCEPT`, `AUTHORED`
+- Added tests: `tests/test_relations.py` (narration chain, book relation, concept mention, authorship, full pipeline)
+- Added package export: `src/relations/__init__.py`
+- Ran directional sanity check on 5 real gold hadiths: narration edges were ordered correctly (`earlier narrator -> later narrator`)
+
+7. **Entity normalization + knowledge graph MVP (Tasks 2/3)**
+- Implemented resolver: `src/graph/entity_resolver.py` (`EntityResolver`)
+- Implemented graph builder: `src/graph/builder.py` (`KnowledgeGraphBuilder`)
+- Implemented query helpers: `src/graph/query.py` (`GraphQuerier`)
+- Added package export: `src/graph/__init__.py`
+- Added graph/resolver tests: `tests/test_graph.py`
+- Added deterministic resolver fixtures: `tests/fixtures/resolver_gazetteers/`
 
 ## Model Results
 
@@ -148,6 +170,12 @@ CAMeLBERT ablation script:
 
 ```bash
 python scripts/run_camelbert_ablation.py
+```
+
+Relation extraction + graph tests:
+
+```bash
+pytest tests/test_relations.py tests/test_graph.py -q -p no:cacheprovider --basetemp=./tmp_pytest_rel_graph
 ```
 
 Notebook map:

@@ -1,0 +1,226 @@
+{
+  "started_at_unix": 520626,
+  "runtime_seconds": 322.814,
+  "config": {
+    "model_dir_requested": "C:\\Users\\diaab\\islamic-ner\\models\\islamic_ner_best",
+    "model_dir_used": "C:\\Users\\diaab\\islamic-ner\\models\\islamic_ner_standard\\final_model",
+    "bukhari_path": "C:\\Users\\diaab\\islamic-ner\\data\\raw\\hadith_json\\bukhari.json",
+    "limit": 500,
+    "neo4j_uri": "bolt://localhost:7687",
+    "neo4j_user": "neo4j",
+    "max_seq_length": 512,
+    "word_window": 120,
+    "device": "cpu",
+    "clear_graph": false,
+    "dry_run": false
+  },
+  "model_resolution_notes": [
+    "Requested model 'C:\\Users\\diaab\\islamic-ner\\models\\islamic_ner_best' not found; using fallback 'C:\\Users\\diaab\\islamic-ner\\models\\islamic_ner_standard\\final_model'."
+  ],
+  "summary": {
+    "hadiths_total": 500,
+    "hadiths_processed": 500,
+    "hadiths_skipped": 0,
+    "hadiths_failed": 0,
+    "relations_extracted_total": 2643,
+    "entities_inserted_total": 4411,
+    "relations_inserted_total": 2585,
+    "throughput_hadiths_per_sec": 1.5489
+  },
+  "graph_stats": {
+    "nodes_by_label": {
+      "Scholar": 1074,
+      "Hadith": 500,
+      "Place": 20,
+      "Concept": 27,
+      "Book": 3
+    },
+    "relationships_by_type": {
+      "NARRATED_FROM": 2396,
+      "AUTHORED": 10,
+      "MENTIONS_CONCEPT": 178,
+      "IN_BOOK": 1
+    },
+    "total_nodes": 1624,
+    "total_relationships": 2585
+  },
+  "graph_stats_error": "",
+  "sample_records": [
+    {
+      "hadith_id": "bukhari_1",
+      "token_count": 82,
+      "relations_extracted": 4,
+      "entities_inserted": 8,
+      "relations_inserted": 4
+    },
+    {
+      "hadith_id": "bukhari_2",
+      "token_count": 96,
+      "relations_extracted": 5,
+      "entities_inserted": 10,
+      "relations_inserted": 5
+    },
+    {
+      "hadith_id": "bukhari_3",
+      "token_count": 332,
+      "relations_extracted": 7,
+      "entities_inserted": 12,
+      "relations_inserted": 7
+    },
+    {
+      "hadith_id": "bukhari_4",
+      "token_count": 87,
+      "relations_extracted": 5,
+      "entities_inserted": 10,
+      "relations_inserted": 5
+    },
+    {
+      "hadith_id": "bukhari_5",
+      "token_count": 133,
+      "relations_extracted": 5,
+      "entities_inserted": 10,
+      "relations_inserted": 5
+    },
+    {
+      "hadith_id": "bukhari_6",
+      "token_count": 76,
+      "relations_extracted": 7,
+      "entities_inserted": 9,
+      "relations_inserted": 5
+    },
+    {
+      "hadith_id": "bukhari_7",
+      "token_count": 826,
+      "relations_extracted": 30,
+      "entities_inserted": 50,
+      "relations_inserted": 27
+    },
+    {
+      "hadith_id": "bukhari_8",
+      "token_count": 53,
+      "relations_extracted": 6,
+      "entities_inserted": 10,
+      "relations_inserted": 6
+    },
+    {
+      "hadith_id": "bukhari_9",
+      "token_count": 47,
+      "relations_extracted": 8,
+      "entities_inserted": 9,
+      "relations_inserted": 7
+    },
+    {
+      "hadith_id": "bukhari_10",
+      "token_count": 86,
+      "relations_extracted": 12,
+      "entities_inserted": 12,
+      "relations_inserted": 9
+    },
+    {
+      "hadith_id": "bukhari_11",
+      "token_count": 47,
+      "relations_extracted": 6,
+      "entities_inserted": 8,
+      "relations_inserted": 6
+    },
+    {
+      "hadith_id": "bukhari_12",
+      "token_count": 45,
+      "relations_extracted": 6,
+      "entities_inserted": 8,
+      "relations_inserted": 6
+    },
+    {
+      "hadith_id": "bukhari_13",
+      "token_count": 47,
+      "relations_extracted": 7,
+      "entities_inserted": 8,
+      "relations_inserted": 7
+    },
+    {
+      "hadith_id": "bukhari_14",
+      "token_count": 42,
+      "relations_extracted": 4,
+      "entities_inserted": 6,
+      "relations_inserted": 4
+    },
+    {
+      "hadith_id": "bukhari_15",
+      "token_count": 53,
+      "relations_extracted": 6,
+      "entities_inserted": 9,
+      "relations_inserted": 6
+    },
+    {
+      "hadith_id": "bukhari_16",
+      "token_count": 61,
+      "relations_extracted": 8,
+      "entities_inserted": 10,
+      "relations_inserted": 8
+    },
+    {
+      "hadith_id": "bukhari_17",
+      "token_count": 36,
+      "relations_extracted": 5,
+      "entities_inserted": 7,
+      "relations_inserted": 5
+    },
+    {
+      "hadith_id": "bukhari_18",
+      "token_count": 110,
+      "relations_extracted": 6,
+      "entities_inserted": 9,
+      "relations_inserted": 5
+    },
+    {
+      "hadith_id": "bukhari_19",
+      "token_count": 54,
+      "relations_extracted": 4,
+      "entities_inserted": 9,
+      "relations_inserted": 4
+    },
+    {
+      "hadith_id": "bukhari_20",
+      "token_count": 62,
+      "relations_extracted": 4,
+      "entities_inserted": 6,
+      "relations_inserted": 4
+    },
+    {
+      "hadith_id": "bukhari_21",
+      "token_count": 62,
+      "relations_extracted": 7,
+      "entities_inserted": 9,
+      "relations_inserted": 7
+    },
+    {
+      "hadith_id": "bukhari_22",
+      "token_count": 88,
+      "relations_extracted": 11,
+      "entities_inserted": 15,
+      "relations_inserted": 11
+    },
+    {
+      "hadith_id": "bukhari_23",
+      "token_count": 71,
+      "relations_extracted": 4,
+      "entities_inserted": 9,
+      "relations_inserted": 4
+    },
+    {
+      "hadith_id": "bukhari_24",
+      "token_count": 52,
+      "relations_extracted": 9,
+      "entities_inserted": 10,
+      "relations_inserted": 8
+    },
+    {
+      "hadith_id": "bukhari_25",
+      "token_count": 70,
+      "relations_extracted": 9,
+      "entities_inserted": 12,
+      "relations_inserted": 9
+    }
+  ],
+  "errors": []
+}
