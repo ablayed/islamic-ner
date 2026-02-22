@@ -1,0 +1,324 @@
+Islamic-NER Repository Explanation (Beginner Friendly)
+======================================================
+
+1) What this project is
+-----------------------
+This repository is an AI project for reading Arabic hadith text and turning it into structured knowledge.
+
+In simple terms, it does 3 big jobs:
+- It finds important words in hadith text (people, books, concepts, places, references).
+- It finds relationships between these words (for example, who narrated from whom).
+- It stores the results in a graph database (Neo4j) so you can ask connected questions.
+
+If you know nothing about NLP, think of it like this:
+- Input: long Arabic text.
+- Output: a smart map of "who/what is mentioned" and "how they are connected".
+
+
+2) Why this matters
+-------------------
+Raw hadith text is rich but hard to query at scale.
+You can read one hadith manually, but it is hard to answer questions like:
+- "Show all direct narrators of a scholar."
+- "What concepts appear in a specific book/chapter?"
+- "How are two scholars connected in narration chains?"
+
+This project converts unstructured text into structured data so these questions become queryable.
+
+
+3) Core ideas (explained simply)
+--------------------------------
+NER (Named Entity Recognition):
+- A model reads text and labels spans such as:
+  - SCHOLAR
+  - BOOK
+  - CONCEPT
+  - PLACE
+  - HADITH_REF
+
+Relation Extraction:
+- After entities are found, rules connect them.
+- Example pattern in narration chains:
+  - "hadathana X an Y an Z" usually means X narrated from Y, and Y narrated from Z.
+
+Knowledge Graph:
+- Entities become nodes.
+- Relations become edges.
+- Neo4j stores this so you can run graph queries.
+
+Silver data vs Gold data:
+- Silver data = automatically labeled, large, noisy.
+- Gold data = manually corrected, smaller, high quality.
+- Model is trained on silver, but judged on gold for honest quality.
+
+
+4) End-to-end pipeline
+----------------------
+Step A: Download raw data
+- Scripts pull hadith corpora and related datasets into data/raw/.
+
+Step B: Normalize Arabic text
+- Text is cleaned to reduce spelling and diacritic variation.
+- This makes training and matching more stable.
+
+Step C: Build silver training data
+- Gazetteers + rules auto-label text.
+- Output is train/dev/test splits in data/silver/.
+
+Step D: Train NER models
+- Multiple model runs were trained and compared.
+- Best final run on gold evaluation is AraBERT standard.
+
+Step E: Build gold set and evaluate
+- 200 sentences were manually corrected.
+- All final models were tested on this gold set.
+
+Step F: Analyze errors
+- Notebook classifies errors: hallucinations, boundaries, misses, etc.
+- This shows where the model is strong/weak and what to improve.
+
+Step G: Extract relations (rule-based)
+- Uses deterministic patterns for narration and book/concept links.
+- This is the current MVP approach.
+
+Step H: Resolve entity variants
+- Different spellings/titles of the same person are merged to one canonical node.
+
+Step I: Build Neo4j graph
+- Process hadith text through normalize -> NER -> relation extraction -> graph insertion.
+- Graph can then be explored by queries and visualization notebook.
+
+
+5) Current project status (what is already done)
+------------------------------------------------
+Completed:
+- Silver data generation and boosting.
+- AraBERT standard and weighted training.
+- CAMeLBERT ablation.
+- Gold annotation set (200 sentences) and validation.
+- Gold evaluation and detailed error analysis.
+- Rule-based relation extraction module.
+- Entity resolver module.
+- Graph builder/query modules for Neo4j.
+- Tests for relation extraction and graph components.
+- Graph build script and graph exploration notebook.
+
+Also implemented:
+- Training fix for non-contiguous tensor save issue before trainer.train().
+
+
+6) Important results (plain English)
+------------------------------------
+Best NER model on gold:
+- AraBERT (standard)
+
+Gold test quality (overall):
+- Precision ~ 0.896
+- Recall ~ 0.931
+- F1 ~ 0.913
+- Macro F1 ~ 0.740
+
+Per-entity behavior (best model):
+- CONCEPT: very strong
+- SCHOLAR: strong
+- HADITH_REF: weak (low examples)
+- PLACE: weak precision (over-prediction)
+- BOOK: not measurable in this specific gold sample (zero support)
+
+Main error pattern:
+- Biggest issue is hallucinated entities (false positives), especially SCHOLAR.
+- Boundary mistakes are second (span too long or too short).
+
+Graph build run (500 Bukhari hadiths):
+- Processed 500/500 successfully.
+- Runtime about 323 seconds (around 5.4 minutes).
+- Nodes created: 1624 total.
+- Relationships created: 2585 total.
+
+
+7) Why relation extraction is rule-based (for now)
+--------------------------------------------------
+The project intentionally uses rules for relation extraction MVP.
+
+Reason:
+- Isnad chains are highly regular in syntax.
+- With limited manually labeled relation data, rule patterns can already perform well.
+
+Current relation types:
+- NARRATED_FROM
+- IN_BOOK
+- MENTIONS_CONCEPT
+- AUTHORED
+
+Future direction:
+- Add classifier-based relation extraction when enough labeled relation data exists.
+
+
+8) Repository structure (simple map)
+------------------------------------
+Top-level key folders:
+- data/
+  - raw/ : downloaded source text
+  - silver/ : auto-labeled training data
+  - gold/ : manually corrected evaluation set
+  - gazetteers/ : canonical names and variants
+- models/
+  - trained checkpoints and final models
+  - evaluation outputs
+- src/
+  - preprocessing/ : normalization/tokenization helpers
+  - ner/ : weak labeling and NER utilities
+  - relations/ : rule-based relation extraction
+  - graph/ : entity resolver + Neo4j builder + query helpers
+  - evaluation/ : metrics and analysis helpers
+- scripts/
+  - data download, silver generation, annotation, ablation, graph build
+- notebooks/
+  - EDA, training, ablation, error analysis, graph exploration
+- tests/
+  - unit tests for relations and graph modules
+
+
+9) What each major script does
+------------------------------
+scripts/download_data.py
+- Downloads core raw hadith/open-hadith resources.
+
+scripts/download_sanadset.py
+- Downloads sanad-focused dataset.
+
+scripts/generate_silver_data.py
+- Creates silver-labeled NER dataset.
+
+scripts/boost_silver_data.py
+- Improves silver dataset via gazetteer refresh and targeted augmentation.
+
+scripts/gold_annotation.py
+- Prepares and validates manual gold annotation workflow.
+
+scripts/run_camelbert_ablation.py
+- Runs CAMeLBERT experiment and compares against AraBERT runs.
+
+scripts/build_graph.py
+- Loads NER model + Bukhari hadith data.
+- For each hadith: normalize -> infer entities -> extract relations -> insert into Neo4j.
+- Prints progress and writes data/graph_build_log.json.
+
+
+10) What each major notebook does
+---------------------------------
+notebooks/01_eda.ipynb
+- Early dataset exploration.
+
+notebooks/02_baseline_anercorp.ipynb
+- Baseline NER setup sanity check.
+
+notebooks/03_sanadset_exploration.ipynb
+- Explore sanad-focused data.
+
+notebooks/04_silver_data_analysis.ipynb
+- Analyze silver label distribution and quality.
+
+notebooks/05_islamic_ner_training.ipynb
+- Main AraBERT training runs.
+
+notebooks/06_ablation_camelbert.ipynb
+- CAMeLBERT comparison.
+
+notebooks/07_error_analysis.ipynb
+- Gold inference, confusion matrix, error taxonomy, hardest sentences.
+
+notebooks/08_graph_exploration.ipynb
+- Connects to Neo4j, prints graph stats, runs example queries, and plots subgraph.
+
+
+11) Simple real-world flow example
+----------------------------------
+Imagine one hadith sentence enters the system.
+
+1. Text cleanup:
+- Arabic normalization standardizes characters/spacing.
+
+2. Entity detection:
+- Model tags words:
+  - "Abu Huraira" -> SCHOLAR
+  - "Sahih Bukhari" -> BOOK
+  - "iman" -> CONCEPT
+
+3. Relation extraction:
+- Rules detect narration chain edges.
+- Rules connect hadith to book/concepts where patterns match.
+
+4. Entity resolution:
+- If same person appears in multiple forms, map to one canonical identity.
+
+5. Graph insertion:
+- Nodes and edges are merged into Neo4j.
+- Duplicate nodes are avoided using constraints + MERGE.
+
+6. Query:
+- You can now ask graph questions instead of manually reading many texts.
+
+
+12) Tests and reliability
+-------------------------
+There are dedicated tests for:
+- Relation extraction behavior.
+- Entity resolver behavior (exact, variant, fuzzy, new, type-aware).
+- Graph insertion behavior (no duplicates on reinsert).
+- Graph query behavior (chain ordering, stats checks).
+
+These tests reduce breakage when code changes.
+
+
+13) Known limitations (honest view)
+-----------------------------------
+NER limitations:
+- Too many false positives in some contexts (especially SCHOLAR).
+- Boundary detection in long Arabic name chains remains hard.
+- Minority entity classes need more balanced data.
+
+Graph limitations:
+- Graph quality depends on NER quality.
+- If NER misses or hallucinates, graph inherits those mistakes.
+
+Environment limitations:
+- Python version compatibility can affect installation (for example camel-tools on newer Python versions).
+
+
+14) Future improvements
+-----------------------
+- Add more high-quality gold data (not just 200 sentences).
+- Add calibration/thresholding to reduce false positives.
+- Add more hard negatives from matn-heavy text.
+- Improve boundary post-processing rules.
+- Expand gazetteer variants and disambiguation rules.
+- Add classifier-based relation extraction when labeled relation data is available.
+- Add CI workflow for automated tests.
+
+
+15) How to run (minimum practical commands)
+-------------------------------------------
+Data and silver pipeline:
+- python scripts/download_data.py
+- python scripts/download_sanadset.py
+- python scripts/generate_silver_data.py
+- python scripts/boost_silver_data.py
+
+Graph build for 500 hadiths:
+- python scripts/build_graph.py --neo4j-password Password
+
+Graph exploration:
+- Open notebooks/08_graph_exploration.ipynb and run all cells.
+
+
+16) If you are a complete beginner, start here
+-----------------------------------------------
+Read in this order:
+1. README.md (project summary and results)
+2. this file (explanatation.txt)
+3. scripts/build_graph.py (full practical pipeline)
+4. notebooks/08_graph_exploration.ipynb (see graph in action)
+5. notebooks/07_error_analysis.ipynb (understand model weaknesses)
+
+If you understand these five, you understand the whole project architecture.
