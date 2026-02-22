@@ -421,6 +421,10 @@ def main() -> int:
         compute_metrics=compute_metrics,
     )
 
+    # Fix non-contiguous tensor saving issue
+    for param in camel_model.parameters():
+        param.data = param.data.contiguous()
+
     if resume_ckpt:
         train_result_camel = trainer_camel.train(resume_from_checkpoint=resume_ckpt)
     else:
