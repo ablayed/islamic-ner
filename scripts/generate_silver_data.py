@@ -25,19 +25,21 @@ from time import perf_counter
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
+
 try:
     from tqdm.auto import tqdm
 except ImportError:  # pragma: no cover
+
     def tqdm(iterable, **_: object):  # type: ignore[misc]
         return iterable
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.ner import SilverAnnotator
-from src.preprocessing.normalize import ArabicNormalizer
-
+from src.ner import SilverAnnotator  # noqa: E402
+from src.preprocessing.normalize import ArabicNormalizer  # noqa: E402
 
 ENCODING_CANDIDATES = ["utf-8", "utf-8-sig", "cp1256", "windows-1256"]
 TAG_SPLIT_RE = re.compile(r"(<[^>]+>)")
@@ -123,7 +125,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_csv_with_fallback(path: Path, nrows: Optional[int] = None) -> Tuple[pd.DataFrame, str]:
+def load_csv_with_fallback(
+    path: Path, nrows: Optional[int] = None
+) -> Tuple[pd.DataFrame, str]:
     if not path.exists():
         raise FileNotFoundError(f"CSV file not found: {path}")
 
@@ -134,7 +138,9 @@ def load_csv_with_fallback(path: Path, nrows: Optional[int] = None) -> Tuple[pd.
         except UnicodeDecodeError as exc:
             last_error = exc
 
-    raise RuntimeError(f"Failed reading {path} with encodings {ENCODING_CANDIDATES}: {last_error}")
+    raise RuntimeError(
+        f"Failed reading {path} with encodings {ENCODING_CANDIDATES}: {last_error}"
+    )
 
 
 def find_first_column(df: pd.DataFrame, candidates: Iterable[str]) -> str:
@@ -158,11 +164,15 @@ def detect_sanadset_text_column(df: pd.DataFrame, sample_size: int = 3000) -> st
             continue
 
         nar_hit = sample.str.contains(r"<\s*NAR\s*>", regex=True, case=False).mean()
-        tag_hit = sample.str.contains(r"</?(?:NAR|SANAD|MATN)>", regex=True, case=False).mean()
+        tag_hit = sample.str.contains(
+            r"</?(?:NAR|SANAD|MATN)>", regex=True, case=False
+        ).mean()
         scored.append((float(nar_hit), float(tag_hit), col))
 
     if not scored:
-        fallback = find_first_column(df, ["hadith", "text", "tagged_text", "hadith_text", "content"])
+        fallback = find_first_column(
+            df, ["hadith", "text", "tagged_text", "hadith_text", "content"]
+        )
         if fallback:
             return fallback
         raise RuntimeError("Could not detect Sanadset text column.")
@@ -171,20 +181,26 @@ def detect_sanadset_text_column(df: pd.DataFrame, sample_size: int = 3000) -> st
     if scored[0][0] > 0:
         return scored[0][2]
 
-    fallback = find_first_column(df, ["hadith", "text", "tagged_text", "hadith_text", "content"])
+    fallback = find_first_column(
+        df, ["hadith", "text", "tagged_text", "hadith_text", "content"]
+    )
     if fallback:
         return fallback
     return scored[0][2]
 
 
 def detect_hadith_unified_text_column(df: pd.DataFrame) -> str:
-    text_col = find_first_column(df, ["arabic_text", "text", "hadith_text", "arabic_normalized"])
+    text_col = find_first_column(
+        df, ["arabic_text", "text", "hadith_text", "arabic_normalized"]
+    )
     if not text_col:
         raise RuntimeError("Could not detect text column in hadith unified CSV.")
     return text_col
 
 
-def sample_rows(df: pd.DataFrame, text_col: str, sample_size: int, seed: int) -> pd.DataFrame:
+def sample_rows(
+    df: pd.DataFrame, text_col: str, sample_size: int, seed: int
+) -> pd.DataFrame:
     if text_col not in df.columns:
         return df.copy()
 
@@ -234,7 +250,9 @@ def resolve_book_name(raw_value: object) -> str:
     return str(raw_value).strip().lower() or "unknown"
 
 
-def split_annotations(annotations: List[Tuple[str, str]]) -> Tuple[List[str], List[str]]:
+def split_annotations(
+    annotations: List[Tuple[str, str]],
+) -> Tuple[List[str], List[str]]:
     tokens = [token for token, _ in annotations]
     labels = [label for _, label in annotations]
     return tokens, labels
@@ -266,7 +284,10 @@ def collect_label_distribution(records: List[Dict]) -> Dict[str, float]:
     if total == 0:
         return {}
 
-    distribution = {label: round((count / total) * 100, 3) for label, count in sorted(label_counter.items())}
+    distribution = {
+        label: round((count / total) * 100, 3)
+        for label, count in sorted(label_counter.items())
+    }
     return distribution
 
 
@@ -357,13 +378,21 @@ def main() -> int:
     normalizer = ArabicNormalizer()
 
     load_start = perf_counter()
-    sanadset_df, sanadset_encoding = load_csv_with_fallback(args.sanadset_path, nrows=args.sanadset_nrows)
-    hadith_df, hadith_encoding = load_csv_with_fallback(args.hadith_unified_path, nrows=args.hadith_unified_nrows)
+    sanadset_df, sanadset_encoding = load_csv_with_fallback(
+        args.sanadset_path, nrows=args.sanadset_nrows
+    )
+    hadith_df, hadith_encoding = load_csv_with_fallback(
+        args.hadith_unified_path, nrows=args.hadith_unified_nrows
+    )
     load_elapsed = perf_counter() - load_start
 
     sanadset_text_col = detect_sanadset_text_column(sanadset_df)
-    sanadset_id_col = find_first_column(sanadset_df, ["id", "hadith_id", "index", "row_id"])
-    sanadset_book_col = find_first_column(sanadset_df, ["book", "book_name", "collection"])
+    sanadset_id_col = find_first_column(
+        sanadset_df, ["id", "hadith_id", "index", "row_id"]
+    )
+    sanadset_book_col = find_first_column(
+        sanadset_df, ["book", "book_name", "collection"]
+    )
 
     hadith_text_col = detect_hadith_unified_text_column(hadith_df)
     hadith_id_col = find_first_column(hadith_df, ["hadith_id", "id", "number"])
@@ -395,12 +424,16 @@ def main() -> int:
         f"- Sanadset loaded rows: {len(sanadset_df):,} "
         f"(nrows={args.sanadset_nrows if args.sanadset_nrows is not None else 'all'})"
     )
-    print(f"- Sanadset sampled rows: {len(sanadset_sample_df):,} (target={args.sanadset_sample_size:,})")
+    print(
+        f"- Sanadset sampled rows: {len(sanadset_sample_df):,} (target={args.sanadset_sample_size:,})"
+    )
     print(
         f"- Hadith unified loaded rows: {len(hadith_df):,} "
         f"(nrows={args.hadith_unified_nrows if args.hadith_unified_nrows is not None else 'all'})"
     )
-    print(f"- Hadith unified sampled rows: {len(hadith_sample_df):,} (target={args.hadith_sample_size:,})")
+    print(
+        f"- Hadith unified sampled rows: {len(hadith_sample_df):,} (target={args.hadith_sample_size:,})"
+    )
 
     records: List[Dict] = []
     rejected_zero_entities = 0
@@ -443,7 +476,11 @@ def main() -> int:
             continue
 
         raw_id = row.get(sanadset_id_col) if sanadset_id_col else row_idx
-        book_name = resolve_book_name(row.get(sanadset_book_col)) if sanadset_book_col else "unknown"
+        book_name = (
+            resolve_book_name(row.get(sanadset_book_col))
+            if sanadset_book_col
+            else "unknown"
+        )
 
         records.append(
             {
@@ -485,7 +522,11 @@ def main() -> int:
             continue
 
         raw_id = row.get(hadith_id_col) if hadith_id_col else row_idx
-        book_name = resolve_book_name(row.get(hadith_book_col)) if hadith_book_col else "unknown"
+        book_name = (
+            resolve_book_name(row.get(hadith_book_col))
+            if hadith_book_col
+            else "unknown"
+        )
 
         records.append(
             {
@@ -506,7 +547,9 @@ def main() -> int:
     rng.shuffle(shuffled_records)
 
     quality_k = min(args.quality_sample_size, len(shuffled_records))
-    quality_sample_records = rng.sample(shuffled_records, k=quality_k) if quality_k > 0 else []
+    quality_sample_records = (
+        rng.sample(shuffled_records, k=quality_k) if quality_k > 0 else []
+    )
     quality_payload = [to_quality_item(record) for record in quality_sample_records]
 
     total = len(shuffled_records)
@@ -527,7 +570,9 @@ def main() -> int:
     timing["pipeline_total_s"] = pipeline_elapsed
     timing["input_sentences"] = float(processed_sentence_count)
     timing["input_sentences_per_sec"] = (
-        float(processed_sentence_count / pipeline_elapsed) if pipeline_elapsed > 0 else 0.0
+        float(processed_sentence_count / pipeline_elapsed)
+        if pipeline_elapsed > 0
+        else 0.0
     )
     timing = {
         key: round(value, 6) if isinstance(value, float) else value
@@ -546,7 +591,9 @@ def main() -> int:
         "total_sentences": total,
         "from_sanadset": int(from_source.get("sanadset", 0)),
         "from_hadith_json": int(from_source.get("hadith_json", 0)),
-        "from_other": int(total - from_source.get("sanadset", 0) - from_source.get("hadith_json", 0)),
+        "from_other": int(
+            total - from_source.get("sanadset", 0) - from_source.get("hadith_json", 0)
+        ),
         "entity_counts": entity_counts,
         "avg_entities_per_sentence": round(total_entities / total, 6) if total else 0.0,
         "label_distribution": label_distribution,

@@ -28,7 +28,9 @@ class FakeGraphBackend:
     def create_constraint(self, constraint: str) -> None:
         self.constraints.append(constraint)
 
-    def merge_entity_node(self, label: str, key_field: str, key_value: str, properties: dict) -> None:
+    def merge_entity_node(
+        self, label: str, key_field: str, key_value: str, properties: dict
+    ) -> None:
         bucket = self.nodes[label]
         node = bucket.get(key_value, {key_field: key_value})
         if "variants" in properties:
@@ -41,9 +43,21 @@ class FakeGraphBackend:
             node[key] = value
         bucket[key_value] = node
 
-    def merge_relation(self, relation_type: str, source_node: dict, target_node: dict, properties: dict) -> None:
-        self.merge_entity_node(source_node["label"], source_node["key_field"], source_node["key_value"], source_node["properties"])
-        self.merge_entity_node(target_node["label"], target_node["key_field"], target_node["key_value"], target_node["properties"])
+    def merge_relation(
+        self, relation_type: str, source_node: dict, target_node: dict, properties: dict
+    ) -> None:
+        self.merge_entity_node(
+            source_node["label"],
+            source_node["key_field"],
+            source_node["key_value"],
+            source_node["properties"],
+        )
+        self.merge_entity_node(
+            target_node["label"],
+            target_node["key_field"],
+            target_node["key_value"],
+            target_node["properties"],
+        )
 
         key = (
             relation_type,
@@ -58,10 +72,15 @@ class FakeGraphBackend:
             return
 
         current = self.relationships[key]
-        current["confidence"] = max(float(current.get("confidence", 0.0)), float(properties.get("confidence", 0.0)))
+        current["confidence"] = max(
+            float(current.get("confidence", 0.0)),
+            float(properties.get("confidence", 0.0)),
+        )
         if not current.get("evidence"):
             current["evidence"] = properties.get("evidence", "")
-        current["source_hadith"] = str(properties.get("source_hadith", current.get("source_hadith", "")))
+        current["source_hadith"] = str(
+            properties.get("source_hadith", current.get("source_hadith", ""))
+        )
         self.relationships[key] = current
 
     def get_stats(self) -> dict:
@@ -150,7 +169,11 @@ class FakeGraphBackend:
         graph: dict[str, set[str]] = defaultdict(set)
         for key in self.relationships:
             rel_type, src_label, src_key, tgt_label, tgt_key, _ = key
-            if rel_type != "NARRATED_FROM" or src_label != "Scholar" or tgt_label != "Scholar":
+            if (
+                rel_type != "NARRATED_FROM"
+                or src_label != "Scholar"
+                or tgt_label != "Scholar"
+            ):
                 continue
             graph[src_key].add(tgt_key)
             graph[tgt_key].add(src_key)
@@ -191,10 +214,14 @@ class FakeSession:
     def create_constraint(self, constraint: str) -> None:
         self.backend.create_constraint(constraint)
 
-    def merge_entity_node(self, label: str, key_field: str, key_value: str, properties: dict) -> None:
+    def merge_entity_node(
+        self, label: str, key_field: str, key_value: str, properties: dict
+    ) -> None:
         self.backend.merge_entity_node(label, key_field, key_value, properties)
 
-    def merge_relation(self, relation_type: str, source_node: dict, target_node: dict, properties: dict) -> None:
+    def merge_relation(
+        self, relation_type: str, source_node: dict, target_node: dict, properties: dict
+    ) -> None:
         self.backend.merge_relation(relation_type, source_node, target_node, properties)
 
     def get_stats(self) -> dict:
@@ -249,31 +276,39 @@ def graph_builder(resolver: EntityResolver):
 
 def test_entity_resolver_exact_match(resolver: EntityResolver) -> None:
     normalizer = ArabicNormalizer()
-    result = resolver.resolve("\u0627\u0644\u0628\u062E\u0627\u0631\u064A", "SCHOLAR")
+    result = resolver.resolve("\u0627\u0644\u0628\u062e\u0627\u0631\u064a", "SCHOLAR")
     assert result["match_type"] == "exact"
     assert result["confidence"] == 1.0
     assert result["canonical_name"] == normalizer.normalize(
-        "\u0645\u062D\u0645\u062F \u0628\u0646 \u0625\u0633\u0645\u0627\u0639\u064A\u0644 \u0627\u0644\u0628\u062E\u0627\u0631\u064A"
+        "\u0645\u062d\u0645\u062f \u0628\u0646 \u0625\u0633\u0645\u0627\u0639\u064a\u0644 \u0627\u0644\u0628\u062e\u0627\u0631\u064a"
     )
 
 
 def test_entity_resolver_variant_match(resolver: EntityResolver) -> None:
     normalizer = ArabicNormalizer()
-    result = resolver.resolve("\u0627\u0644\u0625\u0645\u0627\u0645 \u0627\u0644\u0628\u062E\u0627\u0631\u064A", "SCHOLAR")
+    result = resolver.resolve(
+        "\u0627\u0644\u0625\u0645\u0627\u0645 \u0627\u0644\u0628\u062e\u0627\u0631\u064a",
+        "SCHOLAR",
+    )
     assert result["match_type"] == "exact"
     assert result["canonical_name"] == normalizer.normalize(
-        "\u0645\u062D\u0645\u062F \u0628\u0646 \u0625\u0633\u0645\u0627\u0639\u064A\u0644 \u0627\u0644\u0628\u062E\u0627\u0631\u064A"
+        "\u0645\u062d\u0645\u062f \u0628\u0646 \u0625\u0633\u0645\u0627\u0639\u064a\u0644 \u0627\u0644\u0628\u062e\u0627\u0631\u064a"
     )
 
 
 def test_entity_resolver_fuzzy_match(resolver: EntityResolver) -> None:
-    result = resolver.resolve("\u0627\u0644\u0628\u062E\u0627\u0631\u064A\u064A", "SCHOLAR")
+    result = resolver.resolve(
+        "\u0627\u0644\u0628\u062e\u0627\u0631\u064a\u064a", "SCHOLAR"
+    )
     assert result["match_type"] == "fuzzy"
     assert result["confidence"] >= 0.8
 
 
 def test_entity_resolver_new_entity(resolver: EntityResolver) -> None:
-    result = resolver.resolve("\u0634\u062E\u0635 \u063A\u064A\u0631 \u0645\u0639\u0631\u0648\u0641", "SCHOLAR")
+    result = resolver.resolve(
+        "\u0634\u062e\u0635 \u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641",
+        "SCHOLAR",
+    )
     assert result["match_type"] == "new"
     assert result["confidence"] == 0.5
 
@@ -287,15 +322,15 @@ def test_entity_resolver_type_aware(resolver: EntityResolver) -> None:
 def test_process_single_hadith_creates_nodes_and_edges(graph_builder) -> None:
     builder, _backend, _resolver = graph_builder
     tokens = [
-        "\u062D\u062F\u062B\u0646\u0627",
-        "\u0639\u0628\u062F",
+        "\u062d\u062f\u062b\u0646\u0627",
+        "\u0639\u0628\u062f",
         "\u0627\u0644\u0644\u0647",
         "\u0639\u0646",
         "\u0646\u0627\u0641\u0639",
-        "\u0641\u064A",
-        "\u0635\u062D\u064A\u062D",
-        "\u0627\u0644\u0628\u062E\u0627\u0631\u064A",
-        "\u062D\u062F\u064A\u062B",
+        "\u0641\u064a",
+        "\u0635\u062d\u064a\u062d",
+        "\u0627\u0644\u0628\u062e\u0627\u0631\u064a",
+        "\u062d\u062f\u064a\u062b",
         "\u0631\u0642\u0645",
         "1",
         "\u0627\u0644\u0631\u0628\u0627",
@@ -329,8 +364,8 @@ def test_process_single_hadith_creates_nodes_and_edges(graph_builder) -> None:
 def test_process_same_hadith_twice_has_no_duplicates(graph_builder) -> None:
     builder, _backend, _resolver = graph_builder
     tokens = [
-        "\u062D\u062F\u062B\u0646\u0627",
-        "\u0639\u0628\u062F",
+        "\u062d\u062f\u062b\u0646\u0627",
+        "\u0639\u0628\u062f",
         "\u0627\u0644\u0644\u0647",
         "\u0639\u0646",
         "\u0646\u0627\u0641\u0639",
@@ -349,16 +384,20 @@ def test_entity_resolution_merges_variants_to_same_node(graph_builder) -> None:
     builder, backend, resolver = graph_builder
     normalizer = ArabicNormalizer()
     canonical = normalizer.normalize(
-        "\u0645\u062D\u0645\u062F \u0628\u0646 \u0625\u0633\u0645\u0627\u0639\u064A\u0644 \u0627\u0644\u0628\u062E\u0627\u0631\u064A"
+        "\u0645\u062d\u0645\u062f \u0628\u0646 \u0625\u0633\u0645\u0627\u0639\u064a\u0644 \u0627\u0644\u0628\u062e\u0627\u0631\u064a"
     )
 
     builder.process_hadith(
-        tokens=["\u0642\u0627\u0644", "\u0627\u0644\u0628\u062E\u0627\u0631\u064A"],
+        tokens=["\u0642\u0627\u0644", "\u0627\u0644\u0628\u062e\u0627\u0631\u064a"],
         labels=["O", "B-SCHOLAR"],
         hadith_id="h-var-1",
     )
     builder.process_hadith(
-        tokens=["\u0642\u0627\u0644", "\u0627\u0644\u0625\u0645\u0627\u0645", "\u0627\u0644\u0628\u062E\u0627\u0631\u064A"],
+        tokens=[
+            "\u0642\u0627\u0644",
+            "\u0627\u0644\u0625\u0645\u0627\u0645",
+            "\u0627\u0644\u0628\u062e\u0627\u0631\u064a",
+        ],
         labels=["O", "B-SCHOLAR", "I-SCHOLAR"],
         hadith_id="h-var-2",
     )
@@ -366,14 +405,19 @@ def test_entity_resolution_merges_variants_to_same_node(graph_builder) -> None:
     scholars = backend.nodes.get("Scholar", {})
     assert canonical in scholars
     assert len([name for name in scholars if name == canonical]) == 1
-    assert resolver.resolve("\u0627\u0644\u0628\u062E\u0627\u0631\u064A", "SCHOLAR")["canonical_name"] == canonical
+    assert (
+        resolver.resolve("\u0627\u0644\u0628\u062e\u0627\u0631\u064a", "SCHOLAR")[
+            "canonical_name"
+        ]
+        == canonical
+    )
 
 
 def test_query_narration_chain_correct_order(graph_builder) -> None:
     builder, _backend, resolver = graph_builder
     tokens = [
-        "\u062D\u062F\u062B\u0646\u0627",
-        "\u0639\u0628\u062F",
+        "\u062d\u062f\u062b\u0646\u0627",
+        "\u0639\u0628\u062f",
         "\u0627\u0644\u0644\u0647",
         "\u0639\u0646",
         "\u0645\u0627\u0644\u0643",
@@ -386,9 +430,15 @@ def test_query_narration_chain_correct_order(graph_builder) -> None:
     querier = GraphQuerier(builder.driver)
     chain = querier.get_narration_chain("h-chain")
 
-    expected_s1 = resolver.resolve("\u0639\u0628\u062F \u0627\u0644\u0644\u0647", "SCHOLAR")["canonical_name"]
-    expected_s2 = resolver.resolve("\u0645\u0627\u0644\u0643", "SCHOLAR")["canonical_name"]
-    expected_s3 = resolver.resolve("\u0646\u0627\u0641\u0639", "SCHOLAR")["canonical_name"]
+    expected_s1 = resolver.resolve(
+        "\u0639\u0628\u062f \u0627\u0644\u0644\u0647", "SCHOLAR"
+    )["canonical_name"]
+    expected_s2 = resolver.resolve("\u0645\u0627\u0644\u0643", "SCHOLAR")[
+        "canonical_name"
+    ]
+    expected_s3 = resolver.resolve("\u0646\u0627\u0641\u0639", "SCHOLAR")[
+        "canonical_name"
+    ]
 
     assert len(chain) == 2
     assert chain[0]["source"] == expected_s1
@@ -400,15 +450,15 @@ def test_query_narration_chain_correct_order(graph_builder) -> None:
 def test_graph_stats_counts_match_expected(graph_builder) -> None:
     builder, _backend, _resolver = graph_builder
     tokens = [
-        "\u062D\u062F\u062B\u0646\u0627",
-        "\u0639\u0628\u062F",
+        "\u062d\u062f\u062b\u0646\u0627",
+        "\u0639\u0628\u062f",
         "\u0627\u0644\u0644\u0647",
         "\u0639\u0646",
         "\u0646\u0627\u0641\u0639",
-        "\u0641\u064A",
-        "\u0635\u062D\u064A\u062D",
-        "\u0627\u0644\u0628\u062E\u0627\u0631\u064A",
-        "\u062D\u062F\u064A\u062B",
+        "\u0641\u064a",
+        "\u0635\u062d\u064a\u062d",
+        "\u0627\u0644\u0628\u062e\u0627\u0631\u064a",
+        "\u062d\u062f\u064a\u062b",
         "\u0631\u0642\u0645",
         "7",
         "\u0627\u0644\u0631\u0628\u0627",

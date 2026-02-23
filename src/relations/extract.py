@@ -37,16 +37,13 @@ class RelationExtractor:
         }
 
         self._narration_triggers = {
-            self.normalizer.normalize(token)
-            for token in ("حدثنا", "أخبرنا", "سمعت")
+            self.normalizer.normalize(token) for token in ("حدثنا", "أخبرنا", "سمعت")
         }
         self._chain_connectors = {
-            self.normalizer.normalize(token)
-            for token in ("عن", "أن")
+            self.normalizer.normalize(token) for token in ("عن", "أن")
         }
         self._book_cues = {
-            self.normalizer.normalize(token)
-            for token in ("رواه", "أخرجه", "في")
+            self.normalizer.normalize(token) for token in ("رواه", "أخرجه", "في")
         }
 
     def extract(
@@ -149,7 +146,7 @@ class RelationExtractor:
         if current_type is not None and current_start is not None:
             spans.append(
                 {
-                    "text": " ".join(tokens[current_start:len(tokens)]),
+                    "text": " ".join(tokens[current_start : len(tokens)]),
                     "type": current_type,
                     "start": current_start,
                     "end": len(tokens),
@@ -158,7 +155,9 @@ class RelationExtractor:
 
         return spans
 
-    def _extract_narration_chains(self, tokens: List[str], entities: List[Dict]) -> List[Dict]:
+    def _extract_narration_chains(
+        self, tokens: List[str], entities: List[Dict]
+    ) -> List[Dict]:
         """
         Extract NARRATED_FROM relations from isnad-style patterns.
         """
@@ -177,7 +176,9 @@ class RelationExtractor:
             target = scholars[idx + 1]
 
             between_tokens = normalized_tokens[source["end"] : target["start"]]
-            has_connector = any(token in self._chain_connectors for token in between_tokens)
+            has_connector = any(
+                token in self._chain_connectors for token in between_tokens
+            )
             adjacent = source["end"] == target["start"]
 
             # Trigger words can indicate chain start but are not required for each edge.
@@ -190,7 +191,11 @@ class RelationExtractor:
             if has_connector:
                 confidence = 0.9
                 connector = next(
-                    (token for token in between_tokens if token in self._chain_connectors),
+                    (
+                        token
+                        for token in between_tokens
+                        if token in self._chain_connectors
+                    ),
                     "connector",
                 )
                 evidence = f"isnad connector ({connector}) between scholars"
@@ -281,7 +286,9 @@ class RelationExtractor:
         Extract MENTIONS_CONCEPT relation via co-occurrence.
         """
         concepts = [entity for entity in entities if entity.get("type") == "CONCEPT"]
-        hadith_refs = [entity for entity in entities if entity.get("type") == "HADITH_REF"]
+        hadith_refs = [
+            entity for entity in entities if entity.get("type") == "HADITH_REF"
+        ]
         if not concepts:
             return []
 
@@ -321,8 +328,7 @@ class RelationExtractor:
         books = [entity for entity in entities if entity.get("type") == "BOOK"]
 
         normalized_books = {
-            self.normalizer.normalize(book["text"]): book
-            for book in books
+            self.normalizer.normalize(book["text"]): book for book in books
         }
 
         relations: List[Dict] = []
@@ -395,7 +401,9 @@ class RelationExtractor:
                 int(target.get("end", -1)),
             )
             current = deduped.get(key)
-            if current is None or float(relation.get("confidence", 0.0)) > float(current.get("confidence", 0.0)):
+            if current is None or float(relation.get("confidence", 0.0)) > float(
+                current.get("confidence", 0.0)
+            ):
                 deduped[key] = relation
 
         return list(deduped.values())

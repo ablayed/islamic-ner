@@ -20,20 +20,20 @@ from pathlib import Path
 from time import perf_counter
 from typing import Dict, Iterable, List, Sequence, Tuple
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.ner import SilverAnnotator
-
+from src.ner import SilverAnnotator  # noqa: E402
 
 ENCODING_CANDIDATES = ["utf-8", "utf-8-sig", "cp1256", "windows-1256"]
 EXPECTED_ENTITY_TYPES = ["SCHOLAR", "BOOK", "CONCEPT", "PLACE", "HADITH_REF"]
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Boost silver NER data with updated gazetteers.")
+    parser = argparse.ArgumentParser(
+        description="Boost silver NER data with updated gazetteers."
+    )
     parser.add_argument(
         "--silver-dir",
         type=Path,
@@ -114,16 +114,22 @@ def read_lines_with_fallback(path: Path) -> List[str]:
         except UnicodeDecodeError as exc:
             last_error = exc
 
-    raise RuntimeError(f"Failed reading {path} with encodings {ENCODING_CANDIDATES}: {last_error}")
+    raise RuntimeError(
+        f"Failed reading {path} with encodings {ENCODING_CANDIDATES}: {last_error}"
+    )
 
 
-def split_annotations(annotations: Sequence[Tuple[str, str]]) -> Tuple[List[str], List[str]]:
+def split_annotations(
+    annotations: Sequence[Tuple[str, str]],
+) -> Tuple[List[str], List[str]]:
     tokens = [token for token, _ in annotations]
     labels = [label for _, label in annotations]
     return tokens, labels
 
 
-def extract_entity_spans(labels: Sequence[str], allowed_types: Iterable[str] | None = None) -> List[Tuple[int, int, str]]:
+def extract_entity_spans(
+    labels: Sequence[str], allowed_types: Iterable[str] | None = None
+) -> List[Tuple[int, int, str]]:
     allowed = set(allowed_types) if allowed_types is not None else None
     spans: List[Tuple[int, int, str]] = []
     idx = 0
@@ -193,7 +199,10 @@ def collect_label_distribution(records: Sequence[Dict]) -> Dict[str, float]:
 
     if total == 0:
         return {}
-    return {label: round((count / total) * 100, 3) for label, count in sorted(counter.items())}
+    return {
+        label: round((count / total) * 100, 3)
+        for label, count in sorted(counter.items())
+    }
 
 
 def build_delta(before: Dict[str, int], after: Dict[str, int]) -> Dict[str, int]:
@@ -227,7 +236,9 @@ def merge_allowed_entities(
     return merged, dict(added_counter)
 
 
-def reannotate_hadith_record(record: Dict, annotator: SilverAnnotator) -> Tuple[Dict, bool]:
+def reannotate_hadith_record(
+    record: Dict, annotator: SilverAnnotator
+) -> Tuple[Dict, bool]:
     text = " ".join(record.get("tokens", []))
     annotations = annotator.annotate_from_raw(text, is_normalized=True)
     tokens, labels = split_annotations(annotations)
@@ -240,14 +251,18 @@ def reannotate_hadith_record(record: Dict, annotator: SilverAnnotator) -> Tuple[
     return updated, length_changed
 
 
-def enrich_sanadset_record(record: Dict, annotator: SilverAnnotator) -> Tuple[Dict, Dict[str, int], bool]:
+def enrich_sanadset_record(
+    record: Dict, annotator: SilverAnnotator
+) -> Tuple[Dict, Dict[str, int], bool]:
     text = " ".join(record.get("tokens", []))
     annotations = annotator.annotate_from_raw(text, is_normalized=True)
     candidate_tokens, candidate_labels = split_annotations(annotations)
 
     base_tokens = list(record.get("tokens", []))
     base_labels = list(record.get("ner_tags", []))
-    if len(candidate_tokens) != len(base_tokens) or len(candidate_labels) != len(base_labels):
+    if len(candidate_tokens) != len(base_tokens) or len(candidate_labels) != len(
+        base_labels
+    ):
         return dict(record), {}, True
 
     merged_labels, added_counter = merge_allowed_entities(
@@ -261,7 +276,9 @@ def enrich_sanadset_record(record: Dict, annotator: SilverAnnotator) -> Tuple[Di
     return updated, added_counter, False
 
 
-def process_split(records: Sequence[Dict], annotator: SilverAnnotator) -> Tuple[List[Dict], Dict[str, int]]:
+def process_split(
+    records: Sequence[Dict], annotator: SilverAnnotator
+) -> Tuple[List[Dict], Dict[str, int]]:
     updated_records: List[Dict] = []
     stats: Counter = Counter()
 
@@ -276,13 +293,17 @@ def process_split(records: Sequence[Dict], annotator: SilverAnnotator) -> Tuple[
             continue
 
         if source == "sanadset":
-            updated, added_counter, had_mismatch = enrich_sanadset_record(record, annotator)
+            updated, added_counter, had_mismatch = enrich_sanadset_record(
+                record, annotator
+            )
             updated_records.append(updated)
             stats["sanadset_scanned"] += 1
             if had_mismatch:
                 stats["sanadset_token_length_mismatch"] += 1
             stats["sanadset_added_place"] += int(added_counter.get("PLACE", 0))
-            stats["sanadset_added_hadith_ref"] += int(added_counter.get("HADITH_REF", 0))
+            stats["sanadset_added_hadith_ref"] += int(
+                added_counter.get("HADITH_REF", 0)
+            )
             continue
 
         updated_records.append(dict(record))
@@ -291,7 +312,9 @@ def process_split(records: Sequence[Dict], annotator: SilverAnnotator) -> Tuple[
     return updated_records, dict(stats)
 
 
-def build_boost_records(lines: Sequence[str], annotator: SilverAnnotator) -> Tuple[List[Dict], Dict[str, int]]:
+def build_boost_records(
+    lines: Sequence[str], annotator: SilverAnnotator
+) -> Tuple[List[Dict], Dict[str, int]]:
     records: List[Dict] = []
     stats: Counter = Counter()
 
@@ -380,7 +403,9 @@ def enforce_targets_with_oversampling(
             added_records += 1
             new_id = f"{record.get('id', 'record')}__oversample_{entity_type.lower()}_{added_records}"
             new_source = f"{record.get('source', 'unknown')}_oversample"
-            train_records.append(clone_record(record, new_id=new_id, new_source=new_source))
+            train_records.append(
+                clone_record(record, new_id=new_id, new_source=new_source)
+            )
 
             for key, value in per_record_counts.items():
                 entity_counts[key] = int(entity_counts.get(key, 0) + value)
@@ -517,13 +542,27 @@ def main() -> int:
         print(f"- {entity_type}: was {before_value}, now {after_value}")
 
     print("\nBoost processing:")
-    print(f"- hadith_json reannotated (train+dev): {train_stats.get('hadith_json_reannotated', 0) + dev_stats.get('hadith_json_reannotated', 0)}")
-    print(f"- sanadset scanned (train+dev): {train_stats.get('sanadset_scanned', 0) + dev_stats.get('sanadset_scanned', 0)}")
-    print(f"- sanadset PLACE additions: {train_stats.get('sanadset_added_place', 0) + dev_stats.get('sanadset_added_place', 0)}")
-    print(f"- sanadset HADITH_REF additions: {train_stats.get('sanadset_added_hadith_ref', 0) + dev_stats.get('sanadset_added_hadith_ref', 0)}")
-    print(f"- boost sentences ingested: {boost_stats.get('boost_records_created', 0)} / {len(boost_lines)}")
-    print(f"- oversampled BOOK records: {oversample_summary.get('BOOK', {}).get('records_added', 0)}")
-    print(f"- oversampled HADITH_REF records: {oversample_summary.get('HADITH_REF', {}).get('records_added', 0)}")
+    print(
+        f"- hadith_json reannotated (train+dev): {train_stats.get('hadith_json_reannotated', 0) + dev_stats.get('hadith_json_reannotated', 0)}"
+    )
+    print(
+        f"- sanadset scanned (train+dev): {train_stats.get('sanadset_scanned', 0) + dev_stats.get('sanadset_scanned', 0)}"
+    )
+    print(
+        f"- sanadset PLACE additions: {train_stats.get('sanadset_added_place', 0) + dev_stats.get('sanadset_added_place', 0)}"
+    )
+    print(
+        f"- sanadset HADITH_REF additions: {train_stats.get('sanadset_added_hadith_ref', 0) + dev_stats.get('sanadset_added_hadith_ref', 0)}"
+    )
+    print(
+        f"- boost sentences ingested: {boost_stats.get('boost_records_created', 0)} / {len(boost_lines)}"
+    )
+    print(
+        f"- oversampled BOOK records: {oversample_summary.get('BOOK', {}).get('records_added', 0)}"
+    )
+    print(
+        f"- oversampled HADITH_REF records: {oversample_summary.get('HADITH_REF', {}).get('records_added', 0)}"
+    )
     print(f"- kept held-out test unchanged: {test_unchanged}")
     print(f"- runtime seconds: {round(elapsed, 3)}")
 
@@ -545,7 +584,9 @@ def main() -> int:
     print(f"- {stats_output}")
 
     if args.fail_on_target_miss and not all_targets_met:
-        print("\nFailing because --fail-on-target-miss is enabled and some targets were missed.")
+        print(
+            "\nFailing because --fail-on-target-miss is enabled and some targets were missed."
+        )
         return 2
 
     return 0

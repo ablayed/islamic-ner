@@ -34,7 +34,9 @@ def test_narration_chain_extraction() -> None:
     narration = _by_type(relations, "NARRATED_FROM")
 
     assert len(narration) == 2
-    assert narration[0]["source"]["text"] == "\u0639\u0628\u062f \u0627\u0644\u0644\u0647"
+    assert (
+        narration[0]["source"]["text"] == "\u0639\u0628\u062f \u0627\u0644\u0644\u0647"
+    )
     assert narration[0]["target"]["text"] == "\u0645\u0627\u0644\u0643"
     assert narration[1]["source"]["text"] == "\u0645\u0627\u0644\u0643"
     assert narration[1]["target"]["text"] == "\u0646\u0627\u0641\u0639"
@@ -100,7 +102,10 @@ def test_authorship_extraction() -> None:
 
     assert len(authored) >= 1
     assert authored[0]["source"]["text"] == "\u0627\u0644\u0628\u062e\u0627\u0631\u064a"
-    assert authored[0]["target"]["text"] == "\u0635\u062d\u064a\u062d \u0627\u0644\u0628\u062e\u0627\u0631\u064a"
+    assert (
+        authored[0]["target"]["text"]
+        == "\u0635\u062d\u064a\u062d \u0627\u0644\u0628\u062e\u0627\u0631\u064a"
+    )
     assert authored[0]["confidence"] == 1.0
 
 

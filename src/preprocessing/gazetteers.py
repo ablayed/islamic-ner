@@ -124,7 +124,7 @@ class GazetteerMatcher:
             elif char == "\u0629":
                 normalized_char = "\u0647"
             elif char == "\u0649":
-                normalized_char = "\u064A"
+                normalized_char = "\u064a"
             elif char.isspace():
                 normalized_char = " "
             else:
@@ -224,6 +224,7 @@ class GazetteerMatcher:
             self._profile["total_s"] += total_elapsed
 
     def get_profile_stats(self) -> Dict[str, float]:
+        """Return cumulative timing stats for matcher profiling/debugging."""
         calls = int(self._profile["calls"])
         if calls == 0:
             return {

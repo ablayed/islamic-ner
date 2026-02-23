@@ -140,7 +140,10 @@ class EntityResolver:
             metadata["type"] = entity_type
 
             variant_bucket = metadata["variants"]
-            if isinstance(variant_bucket, list) and canonical_norm not in variant_bucket:
+            if (
+                isinstance(variant_bucket, list)
+                and canonical_norm not in variant_bucket
+            ):
                 variant_bucket.append(canonical_norm)
 
             for variant in parts:
@@ -148,7 +151,10 @@ class EntityResolver:
                 if not variant_norm:
                     continue
                 self.canonical_map[(variant_norm, entity_type)] = canonical_norm
-                if isinstance(variant_bucket, list) and variant_norm not in variant_bucket:
+                if (
+                    isinstance(variant_bucket, list)
+                    and variant_norm not in variant_bucket
+                ):
                     variant_bucket.append(variant_norm)
 
     def _resolve_gazetteer_dir(self, gazetteer_dir: str) -> Path:

@@ -91,7 +91,9 @@ def _compute_word_offsets(text: str, words: List[str]) -> List[Tuple[int, int]]:
     return offsets
 
 
-def _predict_word_labels_with_model(words: List[str], model: Any, tokenizer: Any) -> tuple[List[str], List[float]]:
+def _predict_word_labels_with_model(
+    words: List[str], model: Any, tokenizer: Any
+) -> tuple[List[str], List[float]]:
     encoded = tokenizer(
         words,
         is_split_into_words=True,
@@ -179,7 +181,9 @@ def _predict_word_labels_with_gazetteer(
         for local_index, word_index in enumerate(overlap_indexes):
             prefix = "B" if local_index == 0 else "I"
             labels[word_index] = f"{prefix}-{entity_type}"
-            confidences[word_index] = max(confidences[word_index], 0.75 if prefix == "B" else 0.7)
+            confidences[word_index] = max(
+                confidences[word_index], 0.75 if prefix == "B" else 0.7
+            )
 
     return _repair_bio(labels), confidences
 
@@ -304,7 +308,9 @@ def run_ner_pipeline(
     offsets = _compute_word_offsets(normalized_text, words)
     if model is not None and tokenizer is not None:
         try:
-            labels, confidences = _predict_word_labels_with_model(words, model, tokenizer)
+            labels, confidences = _predict_word_labels_with_model(
+                words, model, tokenizer
+            )
         except Exception:
             labels, confidences = _predict_word_labels_with_gazetteer(
                 normalized_text=normalized_text,
@@ -321,7 +327,9 @@ def run_ner_pipeline(
         )
 
     labels = _repair_bio(labels)
-    entities = _labels_to_entities(words=words, labels=labels, offsets=offsets, confidences=confidences)
+    entities = _labels_to_entities(
+        words=words, labels=labels, offsets=offsets, confidences=confidences
+    )
     return NERPipelineResult(
         normalized_text=normalized_text,
         words=words,
@@ -332,7 +340,9 @@ def run_ner_pipeline(
     )
 
 
-def run_ner_inference(text: str, model: Any, tokenizer: Any, normalizer: Any) -> List[Entity]:
+def run_ner_inference(
+    text: str, model: Any, tokenizer: Any, normalizer: Any
+) -> List[Entity]:
     """
     1. Normalize text
     2. Split into words (whitespace tokenization for Arabic)

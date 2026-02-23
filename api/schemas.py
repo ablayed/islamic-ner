@@ -11,7 +11,9 @@ class NERRequest(BaseModel):
     """Input payload for NER and graph-build endpoints."""
 
     text: str = Field(..., min_length=1, description="Raw Arabic text")
-    return_tokens: bool = Field(default=False, description="Optionally return token-level detail")
+    return_tokens: bool = Field(
+        default=False, description="Optionally return token-level detail"
+    )
 
 
 class Entity(BaseModel):
@@ -23,7 +25,9 @@ class Entity(BaseModel):
 
 
 class Relation(BaseModel):
-    type: str = Field(..., description="NARRATED_FROM, IN_BOOK, MENTIONS_CONCEPT, AUTHORED")
+    type: str = Field(
+        ..., description="NARRATED_FROM, IN_BOOK, MENTIONS_CONCEPT, AUTHORED"
+    )
     source: Entity
     target: Entity
     confidence: float = Field(..., ge=0.0, le=1.0)

@@ -67,7 +67,11 @@ def test_annotate_from_raw_isnad_patterns(sample_gazetteer_dir: Path) -> None:
     scholar_span = ["محمد", "بن", "اسماعيل"]
     span_start = _find_subsequence_start(tokens, scholar_span)
     assert span_start >= 0
-    assert labels[span_start : span_start + 3] == ["B-SCHOLAR", "I-SCHOLAR", "I-SCHOLAR"]
+    assert labels[span_start : span_start + 3] == [
+        "B-SCHOLAR",
+        "I-SCHOLAR",
+        "I-SCHOLAR",
+    ]
     assert _find_label_for_token(annotations, "مالك") == "B-SCHOLAR"
 
 

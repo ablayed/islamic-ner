@@ -72,7 +72,7 @@ class ArabicNormalizer:
         Replaces ``ى`` (U+0649) with ``ي`` (U+064A).
         """
 
-        return self._alif_maqsura_re.sub("\u064A", text)
+        return self._alif_maqsura_re.sub("\u064a", text)
 
     def remove_tatweel(self, text: str) -> str:
         """Remove Tatweel/Kashida elongation marks from Arabic text.

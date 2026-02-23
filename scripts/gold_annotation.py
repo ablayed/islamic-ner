@@ -22,8 +22,7 @@ import random
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence
-
+from typing import Dict, List, Sequence
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -35,7 +34,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Gold annotation workflow tools.")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    prepare = subparsers.add_parser("prepare", help="Sample held-out silver data for manual gold annotation.")
+    prepare = subparsers.add_parser(
+        "prepare", help="Sample held-out silver data for manual gold annotation."
+    )
     prepare.add_argument(
         "--input-path",
         type=Path,
@@ -78,7 +79,9 @@ def parse_args() -> argparse.Namespace:
         help="Overwrite existing output files.",
     )
 
-    build = subparsers.add_parser("build", help="Build final gold JSON from edited CSV files.")
+    build = subparsers.add_parser(
+        "build", help="Build final gold JSON from edited CSV files."
+    )
     build.add_argument(
         "--template-json",
         type=Path,
@@ -120,7 +123,9 @@ def parse_args() -> argparse.Namespace:
         help="Allow empty gold_tag and fall back to silver_tag for those rows.",
     )
 
-    validate = subparsers.add_parser("validate", help="Validate gold JSON format and BIO consistency.")
+    validate = subparsers.add_parser(
+        "validate", help="Validate gold JSON format and BIO consistency."
+    )
     validate.add_argument(
         "--input-json",
         type=Path,
@@ -257,9 +262,13 @@ def command_prepare(args: argparse.Namespace) -> None:
             f"--sample-size ({sample_size}) exceeds held-out size ({len(records)})."
         )
 
-    ensure_writable([args.output_json, args.tokens_csv, args.meta_csv], force=args.force)
+    ensure_writable(
+        [args.output_json, args.tokens_csv, args.meta_csv], force=args.force
+    )
     rng = random.Random(args.seed)
-    sampled_records = [records[idx] for idx in rng.sample(range(len(records)), sample_size)]
+    sampled_records = [
+        records[idx] for idx in rng.sample(range(len(records)), sample_size)
+    ]
 
     args.output_json.parent.mkdir(parents=True, exist_ok=True)
     write_json(args.output_json, sampled_records)
@@ -302,7 +311,15 @@ def command_prepare(args: argparse.Namespace) -> None:
                     }
                 )
 
-    meta_fields = ["sample_index", "id", "source", "book", "confidence", "note", "reviewed"]
+    meta_fields = [
+        "sample_index",
+        "id",
+        "source",
+        "book",
+        "confidence",
+        "note",
+        "reviewed",
+    ]
     with args.meta_csv.open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=meta_fields)
         writer.writeheader()
@@ -323,7 +340,9 @@ def command_prepare(args: argparse.Namespace) -> None:
     print(f"- Gold template JSON: {args.output_json}")
     print(f"- Token annotation sheet: {args.tokens_csv}")
     print(f"- Sentence meta sheet: {args.meta_csv}")
-    print("Next: edit 'gold_tag' in token sheet, then run: python scripts/gold_annotation.py build")
+    print(
+        "Next: edit 'gold_tag' in token sheet, then run: python scripts/gold_annotation.py build"
+    )
 
 
 def command_build(args: argparse.Namespace) -> None:
@@ -342,21 +361,34 @@ def command_build(args: argparse.Namespace) -> None:
 
     with args.tokens_csv.open("r", encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
-        required_columns = {"sample_index", "id", "token_index", "token", "silver_tag", "gold_tag"}
-        if reader.fieldnames is None or not required_columns.issubset(set(reader.fieldnames)):
+        required_columns = {
+            "sample_index",
+            "id",
+            "token_index",
+            "token",
+            "silver_tag",
+            "gold_tag",
+        }
+        if reader.fieldnames is None or not required_columns.issubset(
+            set(reader.fieldnames)
+        ):
             raise ValueError(
                 "Token CSV is missing required columns. Required: "
                 + ", ".join(sorted(required_columns))
             )
 
-        rows_by_key: Dict[tuple[int, str], Dict[int, Dict[str, str]]] = defaultdict(dict)
+        rows_by_key: Dict[tuple[int, str], Dict[int, Dict[str, str]]] = defaultdict(
+            dict
+        )
         for row_idx, row in enumerate(reader):
             rec_id = str(row.get("id", "")).strip()
             if not rec_id:
                 raise ValueError(f"Token CSV row {row_idx + 2} missing id.")
             sample_index = parse_int("sample_index", row.get("sample_index", ""))
             if sample_index < 0:
-                raise ValueError(f"Token CSV row {row_idx + 2} has negative sample_index.")
+                raise ValueError(
+                    f"Token CSV row {row_idx + 2} has negative sample_index."
+                )
             token_index = parse_int("token_index", row.get("token_index", ""))
             if token_index in rows_by_key[(sample_index, rec_id)]:
                 raise ValueError(
@@ -383,7 +415,6 @@ def command_build(args: argparse.Namespace) -> None:
             continue
 
         tokens = list(record["tokens"])
-        silver_tags = [str(tag) for tag in record["ner_tags"]]
         if len(rows_for_id) != len(tokens):
             record_errors.append(
                 f"sample_index={record_idx}, id='{rec_id}': token count mismatch; "
@@ -450,7 +481,9 @@ def command_build(args: argparse.Namespace) -> None:
 
     extra_keys = sorted(set(rows_by_key) - template_key_set)
     if extra_keys:
-        preview_keys = [f"(sample_index={idx}, id='{rec_id}')" for idx, rec_id in extra_keys[:5]]
+        preview_keys = [
+            f"(sample_index={idx}, id='{rec_id}')" for idx, rec_id in extra_keys[:5]
+        ]
         record_errors.append(
             f"Token CSV has {len(extra_keys)} record key(s) not found in template JSON "
             f"(examples: {preview_keys})"
@@ -466,7 +499,9 @@ def command_build(args: argparse.Namespace) -> None:
         with args.meta_csv.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             required_meta_cols = {"id", "confidence", "note", "reviewed"}
-            if reader.fieldnames is None or not required_meta_cols.issubset(set(reader.fieldnames)):
+            if reader.fieldnames is None or not required_meta_cols.issubset(
+                set(reader.fieldnames)
+            ):
                 raise ValueError(
                     "Meta CSV is missing required columns. Required: "
                     + ", ".join(sorted(required_meta_cols))
@@ -536,7 +571,11 @@ def command_validate(args: argparse.Namespace) -> None:
     errors: List[str] = []
     total_tokens = 0
     for idx, record in enumerate(records):
-        total_tokens += len(record.get("tokens", [])) if isinstance(record.get("tokens"), list) else 0
+        total_tokens += (
+            len(record.get("tokens", []))
+            if isinstance(record.get("tokens"), list)
+            else 0
+        )
         errors.extend(validate_record_shape(record, idx))
 
     if errors:

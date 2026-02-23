@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+import logging
+from typing import Any, Dict, List
 
 from src.graph.entity_resolver import EntityResolver
 from src.relations.extract import RelationExtractor
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeGraphBuilder:
@@ -42,10 +45,11 @@ class KnowledgeGraphBuilder:
         self.resolver = resolver or EntityResolver()
         self.relation_extractor = relation_extractor or RelationExtractor()
 
-    def close(self):
+    def close(self) -> None:
+        """Close the underlying Neo4j driver."""
         self.driver.close()
 
-    def clear_graph(self):
+    def clear_graph(self) -> None:
         """Delete all nodes and relationships."""
         with self.driver.session() as session:
             if hasattr(session, "clear_graph"):
@@ -53,7 +57,7 @@ class KnowledgeGraphBuilder:
                 return
             session.run("MATCH (n) DETACH DELETE n")
 
-    def create_constraints(self):
+    def create_constraints(self) -> None:
         """Create uniqueness constraints."""
         constraints = [
             "CREATE CONSTRAINT IF NOT EXISTS FOR (s:Scholar) REQUIRE s.canonical_name IS UNIQUE",
@@ -69,7 +73,7 @@ class KnowledgeGraphBuilder:
                 else:
                     session.run(constraint)
 
-    def insert_entities(self, entities: List[Dict]):
+    def insert_entities(self, entities: List[Dict[str, Any]]) -> int:
         """
         Insert resolved entities as nodes via MERGE.
         """
@@ -87,7 +91,7 @@ class KnowledgeGraphBuilder:
 
         return len(unique_entities)
 
-    def insert_relations(self, relations: List[Dict]):
+    def insert_relations(self, relations: List[Dict[str, Any]]) -> int:
         """
         Insert relation edges via MERGE.
         """
@@ -120,7 +124,9 @@ class KnowledgeGraphBuilder:
 
                 self._merge_entity_node(session, source_node)
                 self._merge_entity_node(session, target_node)
-                self._merge_relation(session, relation_type, source_node, target_node, rel_props)
+                self._merge_relation(
+                    session, relation_type, source_node, target_node, rel_props
+                )
                 relation_count += 1
 
         return relation_count
@@ -130,8 +136,8 @@ class KnowledgeGraphBuilder:
         tokens: List[str],
         labels: List[str],
         hadith_id: str | None = None,
-        metadata: Dict | None = None,
-    ):
+        metadata: Dict[str, Any] | None = None,
+    ) -> Dict[str, int]:
         """
         Full pipeline for one hadith: NER spans -> resolve -> relations -> graph.
         """
@@ -187,8 +193,12 @@ class KnowledgeGraphBuilder:
                 }
             )
 
-        raw_relations = self.relation_extractor.extract(tokens, labels, metadata=metadata)
-        relations = [self._resolve_relation_endpoints(rel, metadata) for rel in raw_relations]
+        raw_relations = self.relation_extractor.extract(
+            tokens, labels, metadata=metadata
+        )
+        relations = [
+            self._resolve_relation_endpoints(rel, metadata) for rel in raw_relations
+        ]
 
         inserted_entities = self.insert_entities(resolved_entities)
         inserted_relations = self.insert_relations(relations)
@@ -198,7 +208,9 @@ class KnowledgeGraphBuilder:
             "relations_inserted": inserted_relations,
         }
 
-    def process_batch(self, hadiths: List[Dict], batch_size: int = 100):
+    def process_batch(
+        self, hadiths: List[Dict[str, Any]], batch_size: int = 100
+    ) -> Dict[str, int]:
         """
         Process multiple hadith dictionaries in sequence.
         """
@@ -211,12 +223,14 @@ class KnowledgeGraphBuilder:
             hadith_id = hadith.get("id")
             metadata = dict(hadith.get("metadata", {}))
 
-            result = self.process_hadith(tokens=tokens, labels=labels, hadith_id=hadith_id, metadata=metadata)
+            result = self.process_hadith(
+                tokens=tokens, labels=labels, hadith_id=hadith_id, metadata=metadata
+            )
             total_entities += int(result["entities_inserted"])
             total_relations += int(result["relations_inserted"])
 
             if batch_size > 0 and idx % batch_size == 0:
-                print(
+                logger.info(
                     f"Processed {idx}/{len(hadiths)} hadiths "
                     f"(entities={total_entities}, relations={total_relations})"
                 )
@@ -227,7 +241,7 @@ class KnowledgeGraphBuilder:
             "relations_inserted": total_relations,
         }
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> Dict[str, Any]:
         """
         Return graph counts by node label and relationship type.
         """
@@ -286,7 +300,9 @@ class KnowledgeGraphBuilder:
         endpoint_type = str(endpoint.get("type", "")).upper()
 
         if endpoint_type in {"SCHOLAR", "BOOK", "CONCEPT", "PLACE"}:
-            resolved = self.resolver.resolve(str(endpoint.get("text", "")), endpoint_type)
+            resolved = self.resolver.resolve(
+                str(endpoint.get("text", "")), endpoint_type
+            )
             endpoint["entity_type"] = resolved["entity_type"]
             endpoint["canonical_name"] = resolved["canonical_name"]
             endpoint["original_text"] = resolved["original_text"]
@@ -307,9 +323,7 @@ class KnowledgeGraphBuilder:
         return endpoint
 
     def _to_node(self, entity: Dict) -> Dict | None:
-        entity_type = str(
-            entity.get("entity_type") or entity.get("type") or ""
-        ).upper()
+        entity_type = str(entity.get("entity_type") or entity.get("type") or "").upper()
         schema = self._NODE_SCHEMA.get(entity_type)
         if schema is None:
             return None
@@ -331,29 +345,39 @@ class KnowledgeGraphBuilder:
             key_value = str(entity.get("canonical_name") or entity.get("text") or "")
             properties = {
                 "canonical_name": key_value,
-                "name_ar": str(entity.get("original_text", entity.get("text", key_value))),
-                "variants": [str(entity.get("original_text", entity.get("text", key_value)))],
+                "name_ar": str(
+                    entity.get("original_text", entity.get("text", key_value))
+                ),
+                "variants": [
+                    str(entity.get("original_text", entity.get("text", key_value)))
+                ],
                 "confidence": float(entity.get("confidence", 1.0)),
             }
         elif entity_type == "BOOK":
             key_value = str(entity.get("canonical_name") or entity.get("text") or "")
             properties = {
                 "canonical_name": key_value,
-                "title_ar": str(entity.get("original_text", entity.get("text", key_value))),
+                "title_ar": str(
+                    entity.get("original_text", entity.get("text", key_value))
+                ),
                 "author": str(entity.get("author", "")),
             }
         elif entity_type == "CONCEPT":
             key_value = str(entity.get("canonical_name") or entity.get("text") or "")
             properties = {
                 "term": key_value,
-                "term_ar": str(entity.get("original_text", entity.get("text", key_value))),
+                "term_ar": str(
+                    entity.get("original_text", entity.get("text", key_value))
+                ),
                 "category": str(entity.get("category", "")),
             }
         else:  # PLACE
             key_value = str(entity.get("canonical_name") or entity.get("text") or "")
             properties = {
                 "canonical_name": key_value,
-                "name_ar": str(entity.get("original_text", entity.get("text", key_value))),
+                "name_ar": str(
+                    entity.get("original_text", entity.get("text", key_value))
+                ),
             }
 
         if not key_value:

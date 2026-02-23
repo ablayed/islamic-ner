@@ -54,7 +54,9 @@ def _load_tokenizer(model_path: Path):
 
     # Prefer model-local tokenizer for reproducibility/offline usage.
     try:
-        return AutoTokenizer.from_pretrained(str(model_path), local_files_only=True, use_fast=True)
+        return AutoTokenizer.from_pretrained(
+            str(model_path), local_files_only=True, use_fast=True
+        )
     except Exception as exc:  # pragma: no cover - guarded startup path
         load_errors.append(str(exc))
 
@@ -121,7 +123,9 @@ async def startup_event() -> None:
             app.state.model_load_error = str(exc)
             logger.exception("Failed to load NER model/tokenizer from %s", model_path)
     else:
-        app.state.model_load_error = "Model loading skipped by ISLAMIC_NER_SKIP_MODEL_LOAD=1."
+        app.state.model_load_error = (
+            "Model loading skipped by ISLAMIC_NER_SKIP_MODEL_LOAD=1."
+        )
 
     skip_neo4j = os.getenv("ISLAMIC_NER_SKIP_NEO4J", "0") == "1"
     if not skip_neo4j:
@@ -145,7 +149,9 @@ async def startup_event() -> None:
             app.state.neo4j_error = str(exc)
             logger.exception("Failed to initialize Neo4j driver")
     else:
-        app.state.neo4j_error = "Neo4j initialization skipped by ISLAMIC_NER_SKIP_NEO4J=1."
+        app.state.neo4j_error = (
+            "Neo4j initialization skipped by ISLAMIC_NER_SKIP_NEO4J=1."
+        )
 
 
 @app.on_event("shutdown")

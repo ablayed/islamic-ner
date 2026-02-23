@@ -14,7 +14,9 @@ import requests
 import streamlit as st
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
-GITHUB_REPO_URL = os.getenv("GITHUB_REPO_URL", "https://github.com/yourusername/islamic-ner")
+GITHUB_REPO_URL = os.getenv(
+    "GITHUB_REPO_URL", "https://github.com/yourusername/islamic-ner"
+)
 
 ENTITY_COLORS = {
     "SCHOLAR": "#1d4ed8",  # blue
@@ -109,7 +111,9 @@ def relation_rows(relations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return rows
 
 
-def render_graph(entities: List[Dict[str, Any]], relations: List[Dict[str, Any]]) -> None:
+def render_graph(
+    entities: List[Dict[str, Any]], relations: List[Dict[str, Any]]
+) -> None:
     graph = nx.DiGraph()
 
     def node_id(entity: Dict[str, Any]) -> str:
@@ -142,7 +146,9 @@ def render_graph(entities: List[Dict[str, Any]], relations: List[Dict[str, Any]]
                 entity_type=str(target.get("type", "UNKNOWN")),
             )
 
-        graph.add_edge(source_id, target_id, relation_type=str(relation.get("type", "")))
+        graph.add_edge(
+            source_id, target_id, relation_type=str(relation.get("type", ""))
+        )
 
     if graph.number_of_nodes() == 0:
         st.info("No graphable entities found in this text.")
@@ -156,9 +162,13 @@ def render_graph(entities: List[Dict[str, Any]], relations: List[Dict[str, Any]]
         for node in graph.nodes
     ]
     node_labels = {node: graph.nodes[node].get("label", node) for node in graph.nodes}
-    edge_labels = {(u, v): attrs.get("relation_type", "") for u, v, attrs in graph.edges(data=True)}
+    edge_labels = {
+        (u, v): attrs.get("relation_type", "") for u, v, attrs in graph.edges(data=True)
+    }
 
-    nx.draw_networkx_nodes(graph, pos, node_color=node_colors, node_size=1700, alpha=0.92, ax=ax)
+    nx.draw_networkx_nodes(
+        graph, pos, node_color=node_colors, node_size=1700, alpha=0.92, ax=ax
+    )
     nx.draw_networkx_edges(
         graph,
         pos,
@@ -169,9 +179,13 @@ def render_graph(entities: List[Dict[str, Any]], relations: List[Dict[str, Any]]
         arrowsize=18,
         ax=ax,
     )
-    nx.draw_networkx_labels(graph, pos, labels=node_labels, font_size=9, font_color="#0f172a", ax=ax)
+    nx.draw_networkx_labels(
+        graph, pos, labels=node_labels, font_size=9, font_color="#0f172a", ax=ax
+    )
     if edge_labels:
-        nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, font_size=8, ax=ax)
+        nx.draw_networkx_edge_labels(
+            graph, pos, edge_labels=edge_labels, font_size=8, ax=ax
+        )
 
     ax.set_axis_off()
     st.pyplot(fig, use_container_width=True)
@@ -208,10 +222,14 @@ st.sidebar.markdown(f"[GitHub Repository]({GITHUB_REPO_URL})")
 st.sidebar.markdown("**Model:** AraBERT v02, fine-tuned on Islamic NER")
 st.sidebar.markdown("**Gold F1:** 91.32%")
 st.sidebar.markdown("**Entity types:** SCHOLAR, BOOK, CONCEPT, PLACE, HADITH_REF")
-st.sidebar.warning("Disclaimer: This is an NLP research tool, not a religious authority.")
+st.sidebar.warning(
+    "Disclaimer: This is an NLP research tool, not a religious authority."
+)
 
 st.title("IslamicNER — Arabic Islamic Text Analysis")
-st.caption("Paste a hadith or classical Arabic text, then inspect entities, relations, and graph structure.")
+st.caption(
+    "Paste a hadith or classical Arabic text, then inspect entities, relations, and graph structure."
+)
 
 if "input_text" not in st.session_state:
     st.session_state.input_text = SAMPLE_TEXTS["Bukhari #1 (Intentions)"]
@@ -236,7 +254,9 @@ if st.button("Analyze", type="primary"):
     else:
         st.session_state.graph_error = ""
         try:
-            st.session_state.ner_result = call_api("/ner", {"text": text, "return_tokens": False})
+            st.session_state.ner_result = call_api(
+                "/ner", {"text": text, "return_tokens": False}
+            )
         except requests.RequestException as exc:
             st.session_state.ner_result = None
             st.session_state.graph_result = None
@@ -260,7 +280,9 @@ if ner_result:
 
     with tab_entities:
         st.subheader("Highlighted Text")
-        st.markdown(highlight_entities(normalized_text, entities), unsafe_allow_html=True)
+        st.markdown(
+            highlight_entities(normalized_text, entities), unsafe_allow_html=True
+        )
 
         entity_rows = [
             {
@@ -279,7 +301,9 @@ if ner_result:
         if graph_result:
             relations = graph_result.get("relations", [])
             st.metric("Nodes Inserted", int(graph_result.get("nodes_inserted", 0)))
-            st.metric("Relations Inserted", int(graph_result.get("relations_inserted", 0)))
+            st.metric(
+                "Relations Inserted", int(graph_result.get("relations_inserted", 0))
+            )
 
             if relations:
                 grouped = defaultdict(list)
@@ -288,11 +312,15 @@ if ner_result:
 
                 for relation_type in sorted(grouped):
                     st.markdown(f"**{relation_type}**")
-                    st.dataframe(pd.DataFrame(grouped[relation_type]), use_container_width=True)
+                    st.dataframe(
+                        pd.DataFrame(grouped[relation_type]), use_container_width=True
+                    )
             else:
                 st.info("No relations extracted from this text.")
         else:
-            st.info("Relation extraction/graph insertion is unavailable right now. Showing entities only.")
+            st.info(
+                "Relation extraction/graph insertion is unavailable right now. Showing entities only."
+            )
             if graph_error:
                 st.caption(f"Graph endpoint error: {graph_error}")
 

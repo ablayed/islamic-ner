@@ -46,4 +46,7 @@ def test_ner_endpoint_with_sample_hadith(client: TestClient) -> None:
     assert payload["tokens"], "Expected token-level output when return_tokens=true."
 
     # With model skipped in tests, gazetteer fallback should still find known entities.
-    assert any(entity["type"] in {"SCHOLAR", "BOOK", "CONCEPT"} for entity in payload["entities"])
+    assert any(
+        entity["type"] in {"SCHOLAR", "BOOK", "CONCEPT"}
+        for entity in payload["entities"]
+    )

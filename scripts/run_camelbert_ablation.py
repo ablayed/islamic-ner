@@ -18,7 +18,12 @@ import numpy as np
 import pandas as pd
 import torch
 from datasets import Dataset, DatasetDict
-from seqeval.metrics import classification_report, f1_score, precision_score, recall_score
+from seqeval.metrics import (
+    classification_report,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 from transformers import (
     AutoModelForTokenClassification,
     AutoTokenizer,
@@ -201,7 +206,9 @@ def evaluate_and_report(trainer: Trainer, dataset, run_name: str, verbose: bool 
         "f1": float(f1_score(y_true, y_pred, zero_division=0)),
     }
     report_text = classification_report(y_true, y_pred, digits=4, zero_division=0)
-    report_dict = classification_report(y_true, y_pred, output_dict=True, zero_division=0)
+    report_dict = classification_report(
+        y_true, y_pred, output_dict=True, zero_division=0
+    )
 
     if verbose:
         print(f"[{run_name}] Overall Precision: {overall['precision']:.4f}")
@@ -295,7 +302,9 @@ def evaluate_saved_model(model_dir: Path, run_name: str, dataset_dict: DatasetDi
 
     model_tokenizer = AutoTokenizer.from_pretrained(str(model_dir))
     tokenized_dev = dataset_dict["dev"].map(
-        lambda examples: tokenize_and_align_labels_for_tokenizer(examples, model_tokenizer),
+        lambda examples: tokenize_and_align_labels_for_tokenizer(
+            examples, model_tokenizer
+        ),
         batched=True,
         remove_columns=dataset_dict["dev"].column_names,
         desc=f"Tokenize dev ({run_name})",
@@ -303,7 +312,12 @@ def evaluate_saved_model(model_dir: Path, run_name: str, dataset_dict: DatasetDi
 
     model = init_model(str(model_dir))
     eval_args = TrainingArguments(
-        output_dir=str(ROOT / "models" / "_tmp_eval" / run_name.replace(" ", "_").replace("(", "").replace(")", "")),
+        output_dir=str(
+            ROOT
+            / "models"
+            / "_tmp_eval"
+            / run_name.replace(" ", "_").replace("(", "").replace(")", "")
+        ),
         per_device_eval_batch_size=16,
         report_to="none",
         seed=SEED,
@@ -318,18 +332,24 @@ def evaluate_saved_model(model_dir: Path, run_name: str, dataset_dict: DatasetDi
         compute_metrics=compute_metrics,
     )
 
-    overall, report, _ = evaluate_and_report(eval_trainer, tokenized_dev, run_name, verbose=False)
+    overall, report, _ = evaluate_and_report(
+        eval_trainer, tokenized_dev, run_name, verbose=False
+    )
     print(f"[{run_name}] overall F1: {overall['f1']:.4f}")
     return overall, report
 
 
-def ensure_metrics(run_dir: Path, model_dir: Path, run_name: str, dataset_dict: DatasetDict):
+def ensure_metrics(
+    run_dir: Path, model_dir: Path, run_name: str, dataset_dict: DatasetDict
+):
     overall, report = load_metrics_from_run_dir(run_dir)
     if overall is not None and report is not None:
         print(f"[{run_name}] loaded saved metrics from {run_dir}")
         return overall, report
 
-    print(f"[{run_name}] saved metrics missing; evaluating saved model artifact instead.")
+    print(
+        f"[{run_name}] saved metrics missing; evaluating saved model artifact instead."
+    )
     overall, report = evaluate_saved_model(model_dir, run_name, dataset_dict)
     if overall is not None and report is not None:
         (run_dir / "dev_overall_metrics.json").write_text(
@@ -369,7 +389,9 @@ def extract_macro_f1(report: Dict | None) -> float:
     return float("nan")
 
 
-def winner_for(comparison_df: pd.DataFrame, metric_name: str, model_cols: List[str]) -> str:
+def winner_for(
+    comparison_df: pd.DataFrame, metric_name: str, model_cols: List[str]
+) -> str:
     row = comparison_df[comparison_df["Metric"] == metric_name]
     if row.empty:
         return "N/A"
@@ -391,17 +413,23 @@ def main() -> int:
     tokenizer_source = CAMEL_MODEL_NAME
     if resume_ckpt:
         ckpt_path = Path(resume_ckpt)
-        if (ckpt_path / "tokenizer.json").exists() and (ckpt_path / "tokenizer_config.json").exists():
+        if (ckpt_path / "tokenizer.json").exists() and (
+            ckpt_path / "tokenizer_config.json"
+        ).exists():
             tokenizer_source = resume_ckpt
         print("Resuming CAMeLBERT training from:", resume_ckpt)
         print("Tokenizer source:", tokenizer_source)
     else:
         print("No resumable CAMeLBERT checkpoint found; starting from scratch.")
 
-    camel_tokenizer = AutoTokenizer.from_pretrained(tokenizer_source, local_files_only=True)
+    camel_tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer_source, local_files_only=True
+    )
     camel_data_collator = DataCollatorForTokenClassification(tokenizer=camel_tokenizer)
     tokenized_camel = dataset_dict.map(
-        lambda examples: tokenize_and_align_labels_for_tokenizer(examples, camel_tokenizer),
+        lambda examples: tokenize_and_align_labels_for_tokenizer(
+            examples, camel_tokenizer
+        ),
         batched=True,
         remove_columns=dataset_dict["train"].column_names,
         desc="Tokenize + align labels (CAMeLBERT-CA)",
@@ -450,7 +478,8 @@ def main() -> int:
         json.dumps(report_camel, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     (CAMEL_RUN_DIR / "run_camel_train_metrics.json").write_text(
-        json.dumps(train_result_camel.metrics, indent=2, ensure_ascii=False), encoding="utf-8"
+        json.dumps(train_result_camel.metrics, indent=2, ensure_ascii=False),
+        encoding="utf-8",
     )
     (CAMEL_RUN_DIR / "run_camel_eval_metrics.json").write_text(
         json.dumps(eval_result_camel, indent=2, ensure_ascii=False), encoding="utf-8"
@@ -458,10 +487,16 @@ def main() -> int:
     print(f"Saved CAMeLBERT-CA model and metrics under: {CAMEL_RUN_DIR}")
 
     arabert_standard_overall, arabert_standard_report = ensure_metrics(
-        ARABERT_STANDARD_RUN_DIR, ARABERT_STANDARD_FINAL, "AraBERT (standard)", dataset_dict
+        ARABERT_STANDARD_RUN_DIR,
+        ARABERT_STANDARD_FINAL,
+        "AraBERT (standard)",
+        dataset_dict,
     )
     arabert_weighted_overall, arabert_weighted_report = ensure_metrics(
-        ARABERT_WEIGHTED_RUN_DIR, ARABERT_WEIGHTED_FINAL, "AraBERT (weighted)", dataset_dict
+        ARABERT_WEIGHTED_RUN_DIR,
+        ARABERT_WEIGHTED_FINAL,
+        "AraBERT (weighted)",
+        dataset_dict,
     )
 
     comparison_rows = [
@@ -497,8 +532,12 @@ def main() -> int:
         },
         {
             "Metric": "HADITH_REF F1",
-            "AraBERT (standard)": extract_entity_f1(arabert_standard_report, "HADITH_REF"),
-            "AraBERT (weighted)": extract_entity_f1(arabert_weighted_report, "HADITH_REF"),
+            "AraBERT (standard)": extract_entity_f1(
+                arabert_standard_report, "HADITH_REF"
+            ),
+            "AraBERT (weighted)": extract_entity_f1(
+                arabert_weighted_report, "HADITH_REF"
+            ),
             "CAMeLBERT-CA": extract_entity_f1(report_camel, "HADITH_REF"),
         },
         {
@@ -514,8 +553,12 @@ def main() -> int:
     for col in model_cols:
         comparison_df[col] = pd.to_numeric(comparison_df[col], errors="coerce").round(4)
 
-    comparison_csv_path = ROOT / "models" / "islamic_ner_ablation_comparison_with_camelbert.csv"
-    comparison_json_path = ROOT / "models" / "islamic_ner_ablation_comparison_with_camelbert.json"
+    comparison_csv_path = (
+        ROOT / "models" / "islamic_ner_ablation_comparison_with_camelbert.csv"
+    )
+    comparison_json_path = (
+        ROOT / "models" / "islamic_ner_ablation_comparison_with_camelbert.json"
+    )
     comparison_payload = {
         "camelbert_model_name": CAMEL_MODEL_NAME,
         "max_seq_length": MAX_SEQ_LENGTH,
@@ -548,11 +591,18 @@ def main() -> int:
     rare_metrics = ["BOOK F1", "PLACE F1", "HADITH_REF F1"]
     rare_score = {
         model: np.nanmean(
-            [float(comparison_df.loc[comparison_df["Metric"] == metric, model].iloc[0]) for metric in rare_metrics]
+            [
+                float(
+                    comparison_df.loc[comparison_df["Metric"] == metric, model].iloc[0]
+                )
+                for metric in rare_metrics
+            ]
         )
         for model in model_cols
     }
-    rare_winner = max(rare_score, key=lambda k: (-np.inf if pd.isna(rare_score[k]) else rare_score[k]))
+    rare_winner = max(
+        rare_score, key=lambda k: (-np.inf if pd.isna(rare_score[k]) else rare_score[k])
+    )
 
     print("\nQuick winners:")
     print("- Overall winner:", overall_winner)

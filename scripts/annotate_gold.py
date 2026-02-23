@@ -16,8 +16,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Sequence, Set, Tuple
-
+from typing import Dict, List, Sequence, Set
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT_PATH = PROJECT_ROOT / "data" / "gold" / "gold_annotation_input.jsonl"
@@ -25,18 +24,20 @@ DEFAULT_PROGRESS_PATH = PROJECT_ROOT / "data" / "gold" / "gold_annotation_progre
 DEFAULT_NOTES_PATH = PROJECT_ROOT / "data" / "gold" / "error_analysis_notes.md"
 
 ENTITY_TYPES = ["SCHOLAR", "BOOK", "CONCEPT", "PLACE", "HADITH_REF"]
-VALID_TAGS = ["O"] + [f"{prefix}-{entity}" for entity in ENTITY_TYPES for prefix in ("B", "I")]
+VALID_TAGS = ["O"] + [
+    f"{prefix}-{entity}" for entity in ENTITY_TYPES for prefix in ("B", "I")
+]
 
 ANSI_RESET = "\033[0m"
 ANSI_DIM = "\033[2m"
 ANSI_BOLD = "\033[1m"
 COLOR_BY_ENTITY = {
-    "SCHOLAR": "\033[96m",     # bright cyan
-    "BOOK": "\033[95m",        # bright magenta
-    "CONCEPT": "\033[93m",     # bright yellow
-    "PLACE": "\033[92m",       # bright green
+    "SCHOLAR": "\033[96m",  # bright cyan
+    "BOOK": "\033[95m",  # bright magenta
+    "CONCEPT": "\033[93m",  # bright yellow
+    "PLACE": "\033[92m",  # bright green
     "HADITH_REF": "\033[94m",  # bright blue
-    "O": "\033[90m",           # gray
+    "O": "\033[90m",  # gray
 }
 
 
@@ -48,7 +49,9 @@ def configure_stdio() -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Interactive terminal annotation helper for gold NER labels.")
+    parser = argparse.ArgumentParser(
+        description="Interactive terminal annotation helper for gold NER labels."
+    )
     parser.add_argument(
         "--input-path",
         type=Path,
@@ -115,8 +118,14 @@ def validate_record(record: Dict, line_no: int) -> None:
     tokens = record["tokens"]
     silver = record["silver_labels"]
     gold = record["gold_labels"]
-    if not isinstance(tokens, list) or not isinstance(silver, list) or not isinstance(gold, list):
-        raise ValueError(f"Line {line_no}: tokens/silver_labels/gold_labels must be lists.")
+    if (
+        not isinstance(tokens, list)
+        or not isinstance(silver, list)
+        or not isinstance(gold, list)
+    ):
+        raise ValueError(
+            f"Line {line_no}: tokens/silver_labels/gold_labels must be lists."
+        )
     if len(tokens) != len(silver) or len(tokens) != len(gold):
         raise ValueError(
             f"Line {line_no}: length mismatch tokens={len(tokens)} silver={len(silver)} gold={len(gold)}."
@@ -150,7 +159,9 @@ def load_progress(path: Path, total: int, start_over: bool) -> Dict:
     if not isinstance(reviewed, list):
         raise ValueError(f"Invalid reviewed_indices in: {path}")
 
-    cleaned = sorted({int(i) for i in reviewed if isinstance(i, int) and 0 <= i < total})
+    cleaned = sorted(
+        {int(i) for i in reviewed if isinstance(i, int) and 0 <= i < total}
+    )
     sessions = payload.get("sessions", [])
     if not isinstance(sessions, list):
         sessions = []
@@ -174,7 +185,14 @@ def color_for_tag(tag: str) -> str:
     return COLOR_BY_ENTITY.get(entity, "")
 
 
-def render_record(record: Dict, sentence_index: int, total: int, reviewed_count: int, session_done: int, session_target: int) -> None:
+def render_record(
+    record: Dict,
+    sentence_index: int,
+    total: int,
+    reviewed_count: int,
+    session_done: int,
+    session_target: int,
+) -> None:
     rec_id = str(record["id"])
     tokens = [str(t) for t in record["tokens"]]
     silver = [str(t) for t in record["silver_labels"]]
@@ -182,7 +200,9 @@ def render_record(record: Dict, sentence_index: int, total: int, reviewed_count:
 
     print("\n" + "=" * 88)
     print(f"Sentence {sentence_index + 1}/{total} | id={rec_id}")
-    print(f"Reviewed: {reviewed_count}/{total} | Session: {session_done}/{session_target}")
+    print(
+        f"Reviewed: {reviewed_count}/{total} | Session: {session_done}/{session_target}"
+    )
     print("-" * 88)
     print("idx | token | silver -> gold")
     print("-" * 88)
@@ -255,7 +275,9 @@ def parse_edit_command(text: str, token_count: int) -> Dict[int, str]:
                 raise ValueError(f"Invalid range '{left}': start > end.")
             for idx in range(start, end + 1):
                 if idx < 0 or idx >= token_count:
-                    raise ValueError(f"Index {idx} out of range [0, {token_count - 1}].")
+                    raise ValueError(
+                        f"Index {idx} out of range [0, {token_count - 1}]."
+                    )
                 edits[idx] = tag
         else:
             idx = int(left)
@@ -270,7 +292,9 @@ def append_note(notes_path: Path, sentence_idx: int, record_id: str, text: str) 
     if not notes_path.exists():
         notes_path.write_text("# Error analysis notes\n\n", encoding="utf-8")
     with notes_path.open("a", encoding="utf-8") as handle:
-        handle.write(f"- [{now_utc_iso()}] sentence={sentence_idx + 1} id={record_id}: {text}\n")
+        handle.write(
+            f"- [{now_utc_iso()}] sentence={sentence_idx + 1} id={record_id}: {text}\n"
+        )
 
 
 def mark_reviewed_and_save(
@@ -330,7 +354,13 @@ def main() -> int:
             if raw == "":
                 reviewed_indices.add(idx)
                 session_done += 1
-                mark_reviewed_and_save(rows, args.input_path, progress, args.progress_path, reviewed_indices)
+                mark_reviewed_and_save(
+                    rows,
+                    args.input_path,
+                    progress,
+                    args.progress_path,
+                    reviewed_indices,
+                )
                 print(f"Saved. Reviewed {len(reviewed_indices)}/{total}.")
                 break
 
@@ -382,7 +412,13 @@ def main() -> int:
                 record["gold_labels"] = candidate
                 reviewed_indices.add(idx)
                 session_done += 1
-                mark_reviewed_and_save(rows, args.input_path, progress, args.progress_path, reviewed_indices)
+                mark_reviewed_and_save(
+                    rows,
+                    args.input_path,
+                    progress,
+                    args.progress_path,
+                    reviewed_indices,
+                )
                 print(f"Saved edits. Reviewed {len(reviewed_indices)}/{total}.")
                 break
             except Exception as exc:

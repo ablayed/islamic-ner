@@ -22,18 +22,19 @@ from typing import Dict, List, Tuple
 import torch
 from transformers import AutoModelForTokenClassification, AutoTokenizer
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.graph.builder import KnowledgeGraphBuilder
-from src.preprocessing.normalize import ArabicNormalizer
-from src.relations.extract import RelationExtractor
+from src.graph.builder import KnowledgeGraphBuilder  # noqa: E402
+from src.preprocessing.normalize import ArabicNormalizer  # noqa: E402
+from src.relations.extract import RelationExtractor  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build Islamic knowledge graph from Bukhari hadiths.")
+    parser = argparse.ArgumentParser(
+        description="Build Islamic knowledge graph from Bukhari hadiths."
+    )
     parser.add_argument(
         "--model-dir",
         type=Path,
@@ -156,9 +157,7 @@ def load_bukhari_hadiths(path: Path, limit: int) -> List[Dict]:
         if chapter.get("id") is not None
     }
     book_title = str(
-        raw.get("metadata", {})
-        .get("arabic", {})
-        .get("title", "صحيح البخاري")
+        raw.get("metadata", {}).get("arabic", {}).get("title", "صحيح البخاري")
     )
 
     records: List[Dict] = []
@@ -191,8 +190,12 @@ class WordLevelNER:
         word_window: int,
         device: str,
     ):
-        self.tokenizer = AutoTokenizer.from_pretrained(str(model_dir), local_files_only=True)
-        self.model = AutoModelForTokenClassification.from_pretrained(str(model_dir), local_files_only=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            str(model_dir), local_files_only=True
+        )
+        self.model = AutoModelForTokenClassification.from_pretrained(
+            str(model_dir), local_files_only=True
+        )
         self.model.eval()
 
         self.max_seq_length = int(max_seq_length)
@@ -244,7 +247,9 @@ class WordLevelNER:
             max_length=self.max_seq_length,
         )
         if not hasattr(encoded, "word_ids"):
-            raise RuntimeError("Tokenizer must be fast and support word_ids for word-level decoding.")
+            raise RuntimeError(
+                "Tokenizer must be fast and support word_ids for word-level decoding."
+            )
 
         model_inputs = {
             key: value.to(self.device)
@@ -370,7 +375,9 @@ def main() -> None:
                     "book_ref": record["book_ref"],
                     "chapter": record["chapter"],
                 }
-                extracted_relations = relation_extractor.extract(tokens, labels, metadata=metadata)
+                extracted_relations = relation_extractor.extract(
+                    tokens, labels, metadata=metadata
+                )
 
                 if args.dry_run:
                     pipeline_result = {"entities_inserted": 0, "relations_inserted": 0}
@@ -393,8 +400,12 @@ def main() -> None:
                             "hadith_id": hadith_id,
                             "token_count": len(tokens),
                             "relations_extracted": len(extracted_relations),
-                            "entities_inserted": int(pipeline_result["entities_inserted"]),
-                            "relations_inserted": int(pipeline_result["relations_inserted"]),
+                            "entities_inserted": int(
+                                pipeline_result["entities_inserted"]
+                            ),
+                            "relations_inserted": int(
+                                pipeline_result["relations_inserted"]
+                            ),
                         }
                     )
             except Exception as exc:  # pragma: no cover - runtime guard
@@ -455,7 +466,9 @@ def main() -> None:
             "relations_extracted_total": total_relations_extracted,
             "entities_inserted_total": total_entities_inserted,
             "relations_inserted_total": total_relations_inserted,
-            "throughput_hadiths_per_sec": round((total / runtime_seconds), 4) if runtime_seconds > 0 else 0.0,
+            "throughput_hadiths_per_sec": (
+                round((total / runtime_seconds), 4) if runtime_seconds > 0 else 0.0
+            ),
         },
         "graph_stats": final_stats,
         "graph_stats_error": final_stats_error,

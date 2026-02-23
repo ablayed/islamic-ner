@@ -188,22 +188,30 @@ def collect_candidate_download_urls(session: requests.Session) -> list[str]:
                 if payload is not None:
                     found = extract_csv_links_from_json(payload, metadata_url)
                     if found:
-                        print(f"[INFO] Found {len(found)} candidate link(s) in {metadata_url}")
+                        print(
+                            f"[INFO] Found {len(found)} candidate link(s) in {metadata_url}"
+                        )
                         candidates.update(found)
             else:
                 found = gather_links_from_html(response.text, metadata_url)
                 if found:
-                    print(f"[INFO] Found {len(found)} candidate link(s) in {metadata_url}")
+                    print(
+                        f"[INFO] Found {len(found)} candidate link(s) in {metadata_url}"
+                    )
                     candidates.update(found)
         else:
-            print(f"[WARN] Metadata URL responded with status {response.status_code}: {metadata_url}")
+            print(
+                f"[WARN] Metadata URL responded with status {response.status_code}: {metadata_url}"
+            )
 
     try:
         landing = session.get(MENDELEY_DATASET_URL, timeout=REQUEST_TIMEOUT)
         landing.raise_for_status()
         html_candidates = gather_links_from_html(landing.text, MENDELEY_DATASET_URL)
         if html_candidates:
-            print(f"[INFO] Found {len(html_candidates)} candidate link(s) in dataset page HTML")
+            print(
+                f"[INFO] Found {len(html_candidates)} candidate link(s) in dataset page HTML"
+            )
             candidates.update(html_candidates)
     except requests.RequestException as exc:
         print(f"[WARN] Could not parse dataset page HTML: {exc}")
@@ -215,7 +223,9 @@ def is_likely_csv_response(response: requests.Response, source_url: str) -> bool
     """Best-effort check whether an HTTP response likely contains CSV content."""
 
     content_type = response.headers.get("content-type", "").lower()
-    filename = parse_content_disposition_filename(response.headers.get("content-disposition"))
+    filename = parse_content_disposition_filename(
+        response.headers.get("content-disposition")
+    )
     source_lower = source_url.lower()
 
     if "text/csv" in content_type or "application/csv" in content_type:
@@ -240,7 +250,9 @@ def download_to_expected_path(
     temp_path = destination.with_suffix(destination.suffix + ".part")
 
     try:
-        with session.get(url, stream=True, timeout=REQUEST_TIMEOUT, allow_redirects=True) as response:
+        with session.get(
+            url, stream=True, timeout=REQUEST_TIMEOUT, allow_redirects=True
+        ) as response:
             response.raise_for_status()
 
             if not is_likely_csv_response(response, url):
@@ -260,7 +272,9 @@ def download_to_expected_path(
                     if total > 0:
                         percent = int((downloaded / max(total, downloaded)) * 100)
                         while percent >= next_report and next_report <= 100:
-                            print(f"    {next_report}% ({downloaded:,}/{max(total, downloaded):,} bytes)")
+                            print(
+                                f"    {next_report}% ({downloaded:,}/{max(total, downloaded):,} bytes)"
+                            )
                             next_report += 10
 
             if downloaded == 0:
@@ -286,7 +300,9 @@ def print_manual_download_instructions() -> None:
     print("\n[MANUAL DOWNLOAD REQUIRED]")
     print("Direct download from Mendeley Data appears blocked in this environment.")
     print(f"1. Open: {MENDELEY_DATASET_URL}")
-    print("2. Download the main Sanadset CSV file (often named `sanadset.csv` or similar).")
+    print(
+        "2. Download the main Sanadset CSV file (often named `sanadset.csv` or similar)."
+    )
     print(f"3. Place it at: {EXPECTED_PATH}")
     print("4. If the filename differs, rename it to `sanadset.csv`.")
     print("After that, continue with the notebook at:")
@@ -318,7 +334,9 @@ def main() -> int:
             print(f"[{index}/{len(candidate_urls)}] Trying: {url}")
             if download_to_expected_path(session, url, EXPECTED_PATH):
                 size = EXPECTED_PATH.stat().st_size
-                print(f"[OK] Saved {EXPECTED_PATH.relative_to(PROJECT_ROOT)} ({size:,} bytes)")
+                print(
+                    f"[OK] Saved {EXPECTED_PATH.relative_to(PROJECT_ROOT)} ({size:,} bytes)"
+                )
                 return 0
 
         print_manual_download_instructions()

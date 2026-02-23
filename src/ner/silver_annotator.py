@@ -8,7 +8,6 @@ from typing import Dict, List, Optional, Tuple
 from src.preprocessing.gazetteers import GazetteerMatcher
 from src.preprocessing.normalize import ArabicNormalizer
 
-
 _TOKEN_RE = re.compile(r"\S+")
 _XML_TAG_RE = re.compile(r"</?\s*([A-Za-z0-9_:-]+)\s*>")
 _ARABIC_LETTER_RE = re.compile(r"[\u0621-\u064A]")
@@ -65,7 +64,9 @@ class SilverAnnotator:
         self._punctuation_chars = set(".,،؛;:!?؟()[]{}\"'")
 
         self._hadith_ref_number_patterns = [
-            re.compile(r"\u062d\u062f\u064a\u062b\s+\u0631\u0642\u0645\s+[0-9\u0660-\u0669]+"),
+            re.compile(
+                r"\u062d\u062f\u064a\u062b\s+\u0631\u0642\u0645\s+[0-9\u0660-\u0669]+"
+            ),
             re.compile(r"\u0631\u0642\u0645\s+[0-9\u0660-\u0669]+"),
         ]
 
@@ -91,11 +92,19 @@ class SilverAnnotator:
         pattern_entities.extend(self._apply_hadith_ref_patterns(text))
         pattern_entities = self._apply_book_context_rules(text, pattern_entities)
 
-        gazetteer_entities = self._gazetteer_entities(text, allowed_types={"BOOK", "CONCEPT", "PLACE"})
+        gazetteer_entities = self._gazetteer_entities(
+            text, allowed_types={"BOOK", "CONCEPT", "PLACE"}
+        )
 
-        nar_token_entities = self._char_entities_to_token_entities(token_infos, nar_entities)
-        pattern_token_entities = self._char_entities_to_token_entities(token_infos, pattern_entities)
-        gazetteer_token_entities = self._char_entities_to_token_entities(token_infos, gazetteer_entities)
+        nar_token_entities = self._char_entities_to_token_entities(
+            token_infos, nar_entities
+        )
+        pattern_token_entities = self._char_entities_to_token_entities(
+            token_infos, pattern_entities
+        )
+        gazetteer_token_entities = self._char_entities_to_token_entities(
+            token_infos, gazetteer_entities
+        )
 
         return self._merge_labels(
             token_list,
@@ -104,7 +113,9 @@ class SilverAnnotator:
             gazetteer_token_entities,
         )
 
-    def annotate_from_raw(self, raw_text: str, *, is_normalized: bool = False) -> List[Tuple[str, str]]:
+    def annotate_from_raw(
+        self, raw_text: str, *, is_normalized: bool = False
+    ) -> List[Tuple[str, str]]:
         """
         Takes raw Arabic text (no tags)  used for hadith-json data.
         Returns list of (token, BIO_label) pairs.
@@ -130,10 +141,16 @@ class SilverAnnotator:
         )
         gazetteer_entities = self._apply_book_context_rules(text, gazetteer_entities)
 
-        pattern_token_entities = self._char_entities_to_token_entities(token_infos, pattern_entities)
-        gazetteer_token_entities = self._char_entities_to_token_entities(token_infos, gazetteer_entities)
+        pattern_token_entities = self._char_entities_to_token_entities(
+            token_infos, pattern_entities
+        )
+        gazetteer_token_entities = self._char_entities_to_token_entities(
+            token_infos, gazetteer_entities
+        )
 
-        return self._merge_labels(token_list, pattern_token_entities, gazetteer_token_entities)
+        return self._merge_labels(
+            token_list, pattern_token_entities, gazetteer_token_entities
+        )
 
     def _apply_isnad_patterns(self, text: str) -> List[Dict]:
         """
@@ -159,7 +176,9 @@ class SilverAnnotator:
         if not token_infos:
             return []
 
-        normalized_tokens = [self.normalizer.normalize(token_info["token"]) for token_info in token_infos]
+        normalized_tokens = [
+            self.normalizer.normalize(token_info["token"]) for token_info in token_infos
+        ]
         entities: List[Dict] = []
 
         for idx, trigger_norm in enumerate(normalized_tokens):
@@ -173,9 +192,14 @@ class SilverAnnotator:
                 token_text = token_infos[j]["token"]
                 token_norm = normalized_tokens[j]
 
-                if not candidate_indexes and self._is_hard_boundary(token_text, token_norm):
+                if not candidate_indexes and self._is_hard_boundary(
+                    token_text, token_norm
+                ):
                     break
-                if candidate_indexes and (token_norm in self._entity_stop or self._is_pure_punctuation(token_text)):
+                if candidate_indexes and (
+                    token_norm in self._entity_stop
+                    or self._is_pure_punctuation(token_text)
+                ):
                     break
 
                 candidate_indexes.append(j)
@@ -216,7 +240,9 @@ class SilverAnnotator:
         - "رقم [N]"  HADITH_REF (number reference)
         """
         token_infos = self._tokenize_with_spans(text)
-        normalized_tokens = [self.normalizer.normalize(token_info["token"]) for token_info in token_infos]
+        normalized_tokens = [
+            self.normalizer.normalize(token_info["token"]) for token_info in token_infos
+        ]
         entities: List[Dict] = []
 
         for idx, token_norm in enumerate(normalized_tokens):
@@ -231,7 +257,12 @@ class SilverAnnotator:
 
                 if self._is_pure_punctuation(token_text):
                     break
-                if next_norm in self._entity_stop or next_norm in {"كتاب", "باب", "حديث", "رقم"}:
+                if next_norm in self._entity_stop or next_norm in {
+                    "كتاب",
+                    "باب",
+                    "حديث",
+                    "رقم",
+                }:
                     break
 
                 candidate_indexes.append(j)
@@ -310,9 +341,8 @@ class SilverAnnotator:
             lookup_type = self._lookup_entity_type(candidate.get("text", ""))
             known_author = lookup_type in {"SCHOLAR", "BOOK"}
 
-            preceded_by_book_keyword = (
-                last_token in self._book_context_keywords
-                or (prev_token == "في" and last_token in self._book_context_keywords)
+            preceded_by_book_keyword = last_token in self._book_context_keywords or (
+                prev_token == "في" and last_token in self._book_context_keywords
             )
             preceded_by_fi = last_token == "في"
 
@@ -346,7 +376,10 @@ class SilverAnnotator:
 
             sorted_source = sorted(
                 source,
-                key=lambda item: (item.get("start_token", 0), -(item.get("end_token", 0) - item.get("start_token", 0))),
+                key=lambda item: (
+                    item.get("start_token", 0),
+                    -(item.get("end_token", 0) - item.get("start_token", 0)),
+                ),
             )
             for entity in sorted_source:
                 start_token = entity.get("start_token")
@@ -431,7 +464,9 @@ class SilverAnnotator:
                     if nar_stack:
                         start = nar_stack.pop()
                         if clean_length > start:
-                            nar_spans.append({"start": start, "end": clean_length, "type": "SCHOLAR"})
+                            nar_spans.append(
+                                {"start": start, "end": clean_length, "type": "SCHOLAR"}
+                            )
                 else:
                     nar_stack.append(clean_length)
             else:
@@ -450,7 +485,9 @@ class SilverAnnotator:
 
         return clean_text, self._dedupe_entities(nar_spans)
 
-    def _gazetteer_entities(self, text: str, allowed_types: Optional[set] = None) -> List[Dict]:
+    def _gazetteer_entities(
+        self, text: str, allowed_types: Optional[set] = None
+    ) -> List[Dict]:
         entities: List[Dict] = []
         for match in self.gazetteer.match(text):
             entity_type = match.get("entity_type")
@@ -466,7 +503,9 @@ class SilverAnnotator:
             )
         return self._dedupe_entities(entities)
 
-    def _char_entities_to_token_entities(self, token_infos: List[Dict], entities: List[Dict]) -> List[Dict]:
+    def _char_entities_to_token_entities(
+        self, token_infos: List[Dict], entities: List[Dict]
+    ) -> List[Dict]:
         if not token_infos or not entities:
             return []
 
@@ -499,7 +538,9 @@ class SilverAnnotator:
 
         return self._dedupe_entities(converted, token_based=True)
 
-    def _dedupe_entities(self, entities: List[Dict], token_based: bool = False) -> List[Dict]:
+    def _dedupe_entities(
+        self, entities: List[Dict], token_based: bool = False
+    ) -> List[Dict]:
         seen = set()
         deduped: List[Dict] = []
         for entity in entities:
@@ -529,7 +570,9 @@ class SilverAnnotator:
             return None
         return lookup[1]
 
-    def _classify_isnad_candidate(self, trigger_norm: str, candidate_text: str) -> Optional[str]:
+    def _classify_isnad_candidate(
+        self, trigger_norm: str, candidate_text: str
+    ) -> Optional[str]:
         lookup_type = self._lookup_entity_type(candidate_text)
         looks_like_name = self._is_probable_name(candidate_text)
 
@@ -597,7 +640,9 @@ class SilverAnnotator:
         return token_norm in self._isnad_stop or self._is_pure_punctuation(token_text)
 
     def _is_pure_punctuation(self, token_text: str) -> bool:
-        return bool(token_text) and all(char in self._punctuation_chars for char in token_text)
+        return bool(token_text) and all(
+            char in self._punctuation_chars for char in token_text
+        )
 
     def _has_terminal_punctuation(self, token_text: str) -> bool:
         return bool(token_text) and token_text[-1] in self._punctuation_chars

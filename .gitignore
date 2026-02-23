@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyc
 *.pyo
 *.pyd
 *.so
@@ -20,6 +21,10 @@ env/
 .ruff_cache/
 .mypy_cache/
 .ipynb_checkpoints/
+tmp_pytest*/
+tmp_ok/
+.tmp_*/
+tests/silver_gazetteers_*/
 
 # Environment
 .env
@@ -42,4 +47,5 @@ data/gold/*
 !data/gold/.gitkeep
 
 # Model artifacts
-models/
+models/*
+!models/README.md

@@ -7,7 +7,13 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, HTTPException, Request
 
 from api.routes.ner import run_ner_pipeline
-from api.schemas import Entity, GraphBuildResponse, NERRequest, Relation, ScholarQueryResponse
+from api.schemas import (
+    Entity,
+    GraphBuildResponse,
+    NERRequest,
+    Relation,
+    ScholarQueryResponse,
+)
 
 router = APIRouter(tags=["Graph"])
 
@@ -144,8 +150,12 @@ async def query_scholar(scholar_name: str, fastapi_request: Request):
     canonical_name = str(scholar.get("canonical_name", scholar_name))
     connections = querier.get_scholar_connections(canonical_name)
 
-    teachers = [{"name": teacher_name} for teacher_name in connections.get("teachers", [])]
-    students = [{"name": student_name} for student_name in connections.get("students", [])]
+    teachers = [
+        {"name": teacher_name} for teacher_name in connections.get("teachers", [])
+    ]
+    students = [
+        {"name": student_name} for student_name in connections.get("students", [])
+    ]
     narrated_hadiths = _count_narrated_hadiths(graph_builder, canonical_name)
 
     return ScholarQueryResponse(

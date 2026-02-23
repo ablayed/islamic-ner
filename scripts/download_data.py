@@ -98,7 +98,10 @@ def download_file(session: requests.Session, url: str, destination: Path) -> boo
                     if total > 0:
                         effective_total = max(total, downloaded)
                         percent = int((downloaded / effective_total) * 100)
-                        while percent >= next_report_percent and next_report_percent <= 100:
+                        while (
+                            percent >= next_report_percent
+                            and next_report_percent <= 100
+                        ):
                             print_byte_progress(downloaded, effective_total)
                             next_report_percent += 10
                     elif downloaded >= next_report_bytes:
@@ -142,7 +145,9 @@ def download_hadith_json(session: requests.Session, branch: str) -> tuple[int, i
             )
             if download_file(session, url, destination):
                 file_size = destination.stat().st_size
-                print(f"  [OK] Saved {destination.relative_to(PROJECT_ROOT)} ({file_size:,} bytes)")
+                print(
+                    f"  [OK] Saved {destination.relative_to(PROJECT_ROOT)} ({file_size:,} bytes)"
+                )
                 if remote_name != filename:
                     print(f"  [INFO] Used upstream fallback filename: {remote_name}")
                 success += 1
@@ -181,7 +186,11 @@ def fetch_open_hadith_csv_paths(
 
         path = node.get("path")
         node_type = node.get("type")
-        if node_type == "blob" and isinstance(path, str) and path.lower().endswith(".csv"):
+        if (
+            node_type == "blob"
+            and isinstance(path, str)
+            and path.lower().endswith(".csv")
+        ):
             csv_paths.append(path)
 
     return sorted(csv_paths)
@@ -194,15 +203,19 @@ def detect_tashkeel_variants(csv_paths: list[str]) -> tuple[bool, bool]:
     without_markers = ("without", "no_tashkeel", "no-tashkeel", "without_tashkeel")
     with_markers = ("tashkeel", "diacritic", "mushakkala")
 
-    has_without = any(any(marker in path for marker in without_markers) for path in lower_paths) or any(
-        not any(marker in path for marker in with_markers) for path in lower_paths
+    has_without = any(
+        any(marker in path for marker in without_markers) for path in lower_paths
+    ) or any(not any(marker in path for marker in with_markers) for path in lower_paths)
+    has_with = any(
+        any(marker in path for marker in with_markers) for path in lower_paths
     )
-    has_with = any(any(marker in path for marker in with_markers) for path in lower_paths)
 
     return has_with, has_without
 
 
-def download_open_hadith_csvs(session: requests.Session, branch: str) -> tuple[int, int]:
+def download_open_hadith_csvs(
+    session: requests.Session, branch: str
+) -> tuple[int, int]:
     """Download CSV files from Open-Hadith-Data into data/raw/open_hadith/."""
 
     OPEN_HADITH_OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -248,7 +261,9 @@ def download_open_hadith_csvs(session: requests.Session, branch: str) -> tuple[i
         print(f"[{index}/{total}] {relative_path}")
         if download_file(session, url, destination):
             file_size = destination.stat().st_size
-            print(f"  [OK] Saved {destination.relative_to(PROJECT_ROOT)} ({file_size:,} bytes)")
+            print(
+                f"  [OK] Saved {destination.relative_to(PROJECT_ROOT)} ({file_size:,} bytes)"
+            )
             success += 1
 
     return success, total
@@ -269,7 +284,9 @@ def main() -> int:
     )
 
     try:
-        hadith_branch = fetch_repo_default_branch(session, HADITH_JSON_OWNER, HADITH_JSON_REPO)
+        hadith_branch = fetch_repo_default_branch(
+            session, HADITH_JSON_OWNER, HADITH_JSON_REPO
+        )
         open_hadith_branch = fetch_repo_default_branch(
             session,
             OPEN_HADITH_OWNER,
@@ -280,7 +297,9 @@ def main() -> int:
         print(f"Open-Hadith-Data default branch: {open_hadith_branch}")
 
         hadith_success, hadith_total = download_hadith_json(session, hadith_branch)
-        open_success, open_total = download_open_hadith_csvs(session, open_hadith_branch)
+        open_success, open_total = download_open_hadith_csvs(
+            session, open_hadith_branch
+        )
     except requests.RequestException as exc:
         print(f"[ERROR] Could not communicate with GitHub: {exc}")
         return 1

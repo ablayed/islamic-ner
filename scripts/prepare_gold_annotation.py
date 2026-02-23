@@ -16,7 +16,6 @@ import random
 from pathlib import Path
 from typing import Dict, List
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT_PATH = PROJECT_ROOT / "data" / "silver" / "test_held_out.json"
 DEFAULT_OUTPUT_JSONL = PROJECT_ROOT / "data" / "gold" / "gold_annotation_input.jsonl"
@@ -121,7 +120,9 @@ Use this file during annotation. Add one short bullet per recurring pattern.
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Prepare gold annotation inputs from held-out silver set.")
+    parser = argparse.ArgumentParser(
+        description="Prepare gold annotation inputs from held-out silver set."
+    )
     parser.add_argument(
         "--input-path",
         type=Path,
@@ -204,7 +205,9 @@ def safe_write_text(path: Path, text: str, force: bool) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def build_gold_seed_records(rows: List[Dict], sample_size: int, seed: int) -> List[Dict]:
+def build_gold_seed_records(
+    rows: List[Dict], sample_size: int, seed: int
+) -> List[Dict]:
     if sample_size <= 0:
         raise ValueError("--sample-size must be > 0")
     if sample_size > len(rows):
