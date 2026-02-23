@@ -15,7 +15,7 @@ import streamlit as st
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 GITHUB_REPO_URL = os.getenv(
-    "GITHUB_REPO_URL", "https://github.com/yourusername/islamic-ner"
+    "GITHUB_REPO_URL", "https://github.com/ablayed/islamic-ner"
 )
 
 ENTITY_COLORS = {
