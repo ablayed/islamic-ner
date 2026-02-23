@@ -1,7 +1,7 @@
 ﻿# Domain-Specific Named Entity Recognition for Arabic Islamic Texts: A Pipeline Approach
 
 ## Abstract
-Arabic NLP has strong general-purpose models, but domain performance drops when applied to classical Islamic texts where narration chains, historical name morphology, and citation structure differ from modern corpora. This project builds an end-to-end pipeline for Arabic Islamic Named Entity Recognition (NER) and downstream knowledge graph construction. The system combines Arabic normalization, weakly supervised silver data generation, AraBERT fine-tuning, rule-based relation extraction, and Neo4j graph insertion with entity resolution. On a hand-annotated gold set of 200 sentences, the best model achieved 91.32% F1. The project demonstrates practical applied AI engineering: data bootstrapping under low supervision, domain-specific modeling decisions, deployment with API/demo interfaces, and transparent error analysis.
+Arabic NLP has strong general-purpose models, but domain performance drops when applied to classical Islamic texts where narration chains, historical name morphology, and citation structure differ from modern corpora. This project builds an end-to-end pipeline for Arabic Islamic Named Entity Recognition (NER) and downstream knowledge graph construction. The system combines Arabic normalization, weakly supervised silver data generation, AraBERT fine-tuning, rule-based relation extraction, and Neo4j graph insertion with entity resolution. On a hand-annotated gold set of 200 sentences, the best model achieved 91.32% F1. The author's background in Islamic theological studies informed the entity schema design and annotation quality assessment. The project demonstrates practical applied AI engineering: data bootstrapping under low supervision, domain-specific modeling decisions, deployment with API/demo interfaces, and transparent error analysis.
 
 ## 1. Introduction
 Islamic textual corpora are large, structurally rich, and historically important, but difficult to process with generic Arabic NLP tools. Hadith texts in particular contain repeating isnad patterns, long narrator names, and domain terms that are underrepresented in mainstream benchmarks. As a result, off-the-shelf NER models trained on news-style datasets often fail to separate narrators, works, concepts, and references reliably in this domain.
@@ -15,7 +15,7 @@ The main contribution is not only a model score, but an operational system: text
 ## 2. Approach
 
 ### 2.1 Data Strategy: Weak Supervision + Gold Validation
-The project uses a two-tier data strategy. First, I bootstrapped silver labels from large hadith sources (including Sanadset 650K and hadith-json aligned inputs) using gazetteers and heuristics. This enabled fast scaling to thousands of training sentences while preserving domain schema control. Second, I built a hand-corrected gold set (200 sentences) for trustworthy evaluation.
+The project uses a two-tier data strategy. First, I bootstrapped silver labels from large hadith sources (including Sanadset 650K and structured hadith collections from sunnah.com via hadith-json) using gazetteers and heuristics. This enabled fast scaling to thousands of training sentences while preserving domain schema control. Second, I built a hand-corrected gold set (200 sentences) for trustworthy evaluation.
 
 This split balances throughput and quality: silver data supplies training volume, gold data provides measurement integrity. The schema includes five entity types: `SCHOLAR`, `BOOK`, `CONCEPT`, `PLACE`, and `HADITH_REF`.
 

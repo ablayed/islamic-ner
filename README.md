@@ -10,14 +10,18 @@ A domain-specific NLP pipeline that extracts scholars, books, concepts, places, 
 
 ![IslamicNER Demo](docs/screenshots/demo1.png)
 
-Additional screenshots:
-- ![Demo Entities](docs/screenshots/demo2.png)
-- ![Demo Relations](docs/screenshots/demo3.png)
-- ![Demo Graph](docs/screenshots/demo4.png)
+<details>
+<summary>More Screenshots</summary>
+
+![Demo Entities](docs/screenshots/demo2.png)
+![Demo Relations](docs/screenshots/demo3.png)
+![Demo Graph](docs/screenshots/demo4.png)
+
+</details>
 
 ## Why This Project Exists
 
-Generic Arabic NER models underperform on hadith corpora because isnad chains, narrator name morphology, and domain vocabulary are structurally different from modern news or web text. Public benchmarks also do not cover the full entity schema needed for Islamic knowledge extraction. This project addresses that gap with a domain-specific Arabic NER model, rule-based relation extraction, and a Neo4j graph layer.
+Generic Arabic NER models underperform on hadith corpora because isnad chains, narrator name morphology, and domain vocabulary are structurally different from modern news or web text. Public benchmarks also do not cover the full entity schema needed for Islamic knowledge extraction. This project addresses that gap with a domain-specific Arabic NER model, rule-based relation extraction, and a Neo4j graph layer. This project combines NLP engineering with domain expertise in Islamic hadith sciences, enabling an entity schema and annotation strategy that generic approaches cannot replicate.
 
 ## Key Results
 
@@ -126,9 +130,9 @@ If you use this project, cite it as:
 ```bibtex
 @software{islamicner2026,
   title = {IslamicNER: Arabic Islamic Text NER and Knowledge Graph},
-  author = {Diaab},
+  author = {Ablaye Dia},
   year = {2026},
-  url = {https://github.com/<your-username>/islamic-ner}
+  url = {https://github.com/ablayed/islamic-ner}
 }
 ```
 

@@ -46,7 +46,7 @@
 - Epochs: 5 with early stopping (`patience=2`)
 - Batch size: 16
 - Max sequence length: 128
-- Hardware: local training environment (update with exact CPU/GPU and wall-clock time if needed)
+- Hardware: Intel core i5, no dedicated GPU, training time ~75 minutes per run.
 
 ## Evaluation
 
